@@ -1,0 +1,13 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!221 &22100000
+AnimatorOverrideController:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Flashlight Holding Override
+  m_Controller: {fileID: 9100000, guid: 6666989e921a5004cab1fb108cebed4d, type: 2}
+  m_Clips:
+  - m_OriginalClip: {fileID: -623603649343465320, guid: a297c01bb1a3cc447aaa3681956e72c8, type: 3}
+    m_OverrideClip: {fileID: -623603649343465320, guid: 9b97c0accc64e344e97f858cad81e365, type: 3}

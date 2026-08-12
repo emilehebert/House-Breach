@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 985ae56e77f06b94f93d32a156e82a89, type: 3}
+  m_Name: footsteps_default
+  m_EditorClassIdentifier: 
+  sounds:
+  - clip: {fileID: 8300000, guid: 55ecd7d30922a4e43b82eca3b6901757, type: 3}
+    weight: 1
+  - clip: {fileID: 8300000, guid: 8f83b6de73af5204eb156f4cad6d7824, type: 3}
+    weight: 1
+  - clip: {fileID: 8300000, guid: f9cf62704deeec7459bcb57f830da470, type: 3}
+    weight: 1
+  - clip: {fileID: 8300000, guid: cffed22a4bda5de49b46a44c61c07e1a, type: 3}
+    weight: 1
+  - clip: {fileID: 8300000, guid: 982fe55801bd12c469a5d9d4244385d8, type: 3}
+    weight: 1
+  pitchRange: {x: 1, y: 1}
+  volumeRange: {x: 1, y: 1}

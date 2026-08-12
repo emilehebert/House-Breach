@@ -1,0 +1,31 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 985ae56e77f06b94f93d32a156e82a89, type: 3}
+  m_Name: interact_audio
+  m_EditorClassIdentifier: 
+  sounds:
+  - clip: {fileID: 8300000, guid: 5872af20270b53d43aef8ffc577cc2d6, type: 3}
+    weight: 1
+  - clip: {fileID: 8300000, guid: 048890932c7e8fc4bb602a7cd577699d, type: 3}
+    weight: 1
+  - clip: {fileID: 8300000, guid: 361ea140dd9d3514193f6ea72ba2907e, type: 3}
+    weight: 1
+  - clip: {fileID: 8300000, guid: 32c917ef6ac49d941b9b183a2e6eb582, type: 3}
+    weight: 1
+  - clip: {fileID: 8300000, guid: 3bf9544d3ebcff44c929458566e8ecc9, type: 3}
+    weight: 1
+  - clip: {fileID: 8300000, guid: 687b4e3bfd44fe24aab1ab8ae8504d1b, type: 3}
+    weight: 1
+  - clip: {fileID: 8300000, guid: cca3f5661793ed64dbce56f65ac09aa7, type: 3}
+    weight: 1
+  pitchRange: {x: 0.85, y: 1.15}
+  volumeRange: {x: 0.85, y: 0.85}

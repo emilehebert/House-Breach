@@ -1,0 +1,27 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 985ae56e77f06b94f93d32a156e82a89, type: 3}
+  m_Name: footsteps_concrete
+  m_EditorClassIdentifier: 
+  sounds:
+  - clip: {fileID: 8300000, guid: 53c8b3770372ebb429e160353ea1a41a, type: 3}
+    weight: 1
+  - clip: {fileID: 8300000, guid: db34de52aa249de418d87d4cd71991e5, type: 3}
+    weight: 1
+  - clip: {fileID: 8300000, guid: 97c42929bab024f4aaaadb8aaf9c5e80, type: 3}
+    weight: 1
+  - clip: {fileID: 8300000, guid: c7b9c8dee6617be49be48537242473e6, type: 3}
+    weight: 1
+  - clip: {fileID: 8300000, guid: 0d1e45867a8c6ff44b1ad860e0bb57b6, type: 3}
+    weight: 1
+  pitchRange: {x: 0.9, y: 1.15}
+  volumeRange: {x: 1, y: 1}
