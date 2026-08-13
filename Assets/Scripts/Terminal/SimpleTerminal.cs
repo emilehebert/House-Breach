@@ -3,96 +3,140 @@ using TMPro;
 using UnityEngine;
 using UnityEngine.UI;
 
-// FocusInteractable handles showing/hiding the canvas and the input field
-// via its On Focus Enter/Exit events. This script only processes commands
-// and manages the output/scroll.
+// FocusInteractable handles showing/hiding the canvas and
+// activating/deactivating the input field via its On Focus Enter / On
+// Focus Exit events. This script's only job is finding the right
+// TerminalCommand for what was typed and running it.
 public class SimpleTerminal : MonoBehaviour
 {
     [Header("UI References")]
     public TMP_InputField inputField;
     public TMP_Text outputText;
-    [SerializeField] private ScrollRect scrollRect;
-    [SerializeField] private RectTransform contentRect;
 
-    [Header("History")]
-    [SerializeField] private int maxLines = 200;
+    [Header("Scrolling (optional — leave empty for no scroll/trim)")]
+    public ScrollRect scrollRect;
+    public RectTransform contentRect;
+    public int maxLines = 200;
 
-    [Header("Commands (drag your TerminalVerb assets in here)")]
-    public List<TerminalVerb> verbs;
+    [Header("Commands (drag your TerminalCommand assets in here)")]
+    public List<TerminalCommand> commands;
 
-    private class VerbData
-    {
-        public string standaloneResponse;
-        public Dictionary<string, string> nouns = new Dictionary<string, string>();
-    }
+    [Header("Candidates (for the dispatch command)")]
+    public List<Candidate> candidates;
 
-    private readonly Dictionary<string, VerbData> lookup = new Dictionary<string, VerbData>();
+    // key = every alias, all pointing at the same TerminalCommand
+    private Dictionary<string, TerminalCommand> lookup;
+
     private bool wasActive;
     private float savedScrollPos;
 
     void Start()
     {
         BuildLookup();
-        inputField?.onSubmit.AddListener(OnPlayerSubmit);
+
+        if (inputField != null)
+            inputField.onSubmit.AddListener(OnPlayerSubmit);
     }
 
     void Update()
     {
         if (inputField == null) return;
 
-        bool active = inputField.gameObject.activeInHierarchy && !MenuManager.IsPaused;
-        inputField.interactable = active;
+        // The field should only be active while the terminal is actually
+        // open (its canvas is visible) and the game isn't paused. Checked
+        // fresh every frame instead of tracking what changed and when —
+        // this makes the field self-correcting no matter what caused it
+        // to lose focus (pause, Unity's own Escape handling, whatever).
+        bool shouldBeActive = inputField.gameObject.activeInHierarchy && !GameManager.IsPaused;
 
-        if (active && !inputField.isFocused) inputField.ActivateInputField();
-        else if (!active && inputField.isFocused) inputField.DeactivateInputField();
+        inputField.interactable = shouldBeActive;
 
-        if (active && !wasActive) RestoreScrollPosition();
-        else if (!active && wasActive && scrollRect != null) savedScrollPos = scrollRect.verticalNormalizedPosition;
-        wasActive = active;
+        if (shouldBeActive && !inputField.isFocused)
+            inputField.ActivateInputField();
+        else if (!shouldBeActive && inputField.isFocused)
+            inputField.DeactivateInputField();
+
+        // Remember where you were scrolled to when the terminal closes,
+        // and put it back instead of always snapping to the bottom on reopen.
+        if (shouldBeActive && !wasActive)
+            RestoreScrollPosition();
+        else if (!shouldBeActive && wasActive && scrollRect != null)
+            savedScrollPos = scrollRect.verticalNormalizedPosition;
+
+        wasActive = shouldBeActive;
     }
 
+    // Flattens every TerminalCommand asset into a dictionary keyed by
+    // every accepted spelling, so "clear", "clr" and "cleer" all resolve
+    // to the exact same command.
     private void BuildLookup()
     {
-        foreach (var verb in verbs)
+        lookup = new Dictionary<string, TerminalCommand>();
+
+        foreach (var command in commands)
         {
-            if (verb?.aliases == null || verb.aliases.Count == 0) continue;
+            if (command == null || command.aliases == null) continue;
 
-            var data = new VerbData { standaloneResponse = verb.standaloneResponse };
-
-            if (verb.compatibleNouns != null)
-                foreach (var entry in verb.compatibleNouns)
-                    if (entry.aliases != null)
-                        foreach (var alias in entry.aliases)
-                            if (!string.IsNullOrWhiteSpace(alias))
-                                data.nouns[alias.Trim().ToLower()] = entry.response;
-
-            foreach (var alias in verb.aliases)
-                if (!string.IsNullOrWhiteSpace(alias))
-                    lookup[alias.Trim().ToLower()] = data;
+            foreach (var alias in command.aliases)
+            {
+                if (string.IsNullOrWhiteSpace(alias)) continue;
+                lookup[alias.Trim().ToLower()] = command;
+            }
         }
     }
 
     public void OnPlayerSubmit(string playerText)
     {
-        if (string.IsNullOrWhiteSpace(playerText)) return;
+        if (string.IsNullOrWhiteSpace(playerText))
+            return;
 
-        AppendLine("> " + playerText, blankBefore: true);
-
+        TerminalCommand matchedCommand = FindCommand(playerText);
         string response = ProcessInput(playerText);
-        if (!string.IsNullOrWhiteSpace(response))
-            AppendLine(response, blankBefore: false);
+
+        if (outputText != null)
+        {
+            bool clear = matchedCommand != null && matchedCommand.clearsScreen;
+
+            if (clear)
+            {
+                outputText.text = response;
+            }
+            else
+            {
+                AppendLine("> " + playerText, blankLineBefore: true);
+
+                if (!string.IsNullOrWhiteSpace(response))
+                    AppendLine(response, blankLineBefore: false);
+            }
+        }
 
         inputField.text = "";
         inputField.ActivateInputField();
     }
 
-    private void AppendLine(string line, bool blankBefore)
+    // blankLineBefore starts a new exchange (a blank line separates it from
+    // the previous one) — used for the echoed command. False keeps a line
+    // tight against the one above it — used for a response under its own
+    // echoed command, so the pair reads as one block.
+    private void AppendLine(string line, bool blankLineBefore)
     {
         if (outputText == null) return;
 
-        outputText.text += (outputText.text.Length == 0 ? "" : blankBefore ? "\n\n" : "\n") + line;
+        string separator = string.IsNullOrEmpty(outputText.text) ? "" : (blankLineBefore ? "\n\n" : "\n");
+        outputText.text += separator + line;
+
         TrimHistory();
         SnapScrollToBottom();
+    }
+
+    // Keeps memory/text length bounded over a long play session — this is
+    // a safety net, not the fix for the overlap issue (the scroll view is).
+    private void TrimHistory()
+    {
+        var lines = outputText.text.Split('\n');
+        if (lines.Length <= maxLines) return;
+
+        outputText.text = string.Join("\n", lines, lines.Length - maxLines, maxLines);
     }
 
     private void SnapScrollToBottom() => SetScroll(0f);
@@ -103,29 +147,38 @@ public class SimpleTerminal : MonoBehaviour
     {
         if (scrollRect == null) return;
 
-        // LayoutRebuilder force un vrai recalcul (fiable même avec des layouts imbriqués).
-        if (contentRect != null) LayoutRebuilder.ForceRebuildLayoutImmediate(contentRect);
+        // Content has to actually recalculate its new (taller) height
+        // before we scroll, or ScrollRect is still working off last
+        // frame's shorter height and the scroll position ends up wrong.
+        if (contentRect != null)
+            LayoutRebuilder.ForceRebuildLayoutImmediate(contentRect);
+
         Canvas.ForceUpdateCanvases();
         scrollRect.verticalNormalizedPosition = normalizedPos;
     }
 
-    private void TrimHistory()
+    private TerminalCommand FindCommand(string playerText)
     {
-        var lines = outputText.text.Split('\n');
-        if (lines.Length <= maxLines) return;
+        string[] words = playerText.Trim().ToLower()
+            .Split(' ', System.StringSplitOptions.RemoveEmptyEntries);
 
-        outputText.text = string.Join("\n", lines, lines.Length - maxLines, maxLines);
+        if (words.Length == 0) return null;
+
+        lookup.TryGetValue(words[0], out TerminalCommand command);
+        return command;
     }
 
     public string ProcessInput(string playerText)
     {
-        var words = playerText.Trim().ToLower().Split(' ', System.StringSplitOptions.RemoveEmptyEntries);
-        if (words.Length == 0 || !lookup.TryGetValue(words[0], out var verb))
+        string[] words = playerText.Trim().ToLower()
+            .Split(' ', System.StringSplitOptions.RemoveEmptyEntries);
+
+        if (words.Length == 0)
+            return "I don't understand that.";
+
+        if (!lookup.TryGetValue(words[0], out TerminalCommand command))
             return "Command not recognized.";
 
-        if (words.Length == 1)
-            return string.IsNullOrWhiteSpace(verb.standaloneResponse) ? "I don't understand that." : verb.standaloneResponse;
-
-        return verb.nouns.TryGetValue(words[1], out var response) ? response : "Command not recognized.";
+        return command.Execute(this, words);
     }
 }

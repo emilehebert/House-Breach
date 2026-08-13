@@ -62,6 +62,11 @@
 #define PSX_VERTEX_COLOR_BLEND_MODE_ADDITIVE (1)
 #define PSX_VERTEX_COLOR_BLEND_MODE_SUBTRACTIVE (2)
 
+// Warning: These definitions must stay in sync with VertexColorBlendMode enum.
+#define PSX_LIGHTING_CLAMP_MODE_NONE (0)
+#define PSX_LIGHTING_CLAMP_MODE_CLAMP (1)
+#define PSX_LIGHTING_CLAMP_MODE_SOFT_CLAMP (2)
+
 // Globals:
 // Unity Standard:
 //
@@ -108,6 +113,8 @@ int _LightingIsEnabled;
 float _BakedLightingMultiplier;
 float _VertexColorLightingMultiplier;
 float _DynamicLightingMultiplier;
+int _LightingClampMode;
+float4 _LightingClampParameters;
 
 // Post Processing
 int _TonemapperIsEnabled;
@@ -191,9 +198,19 @@ half4 _AdditionalLightsColor[MAX_VISIBLE_LIGHTS];
 half4 _AdditionalLightsAttenuation[MAX_VISIBLE_LIGHTS];
 half4 _AdditionalLightsSpotDir[MAX_VISIBLE_LIGHTS];
 half4 _AdditionalLightOcclusionProbeChannel[MAX_VISIBLE_LIGHTS];
+// Cookie projection basis vectors (light right / light up, world space, pre-scaled by 1/tan(spotAngle*0.5)).
+// .w of _AdditionalLightsCookieRight is used as a 0/1 "this light has a cookie" flag.
+half4 _AdditionalLightsCookieRight[MAX_VISIBLE_LIGHTS];
+half4 _AdditionalLightsCookieUp[MAX_VISIBLE_LIGHTS];
 #ifndef SHADER_API_GLES3
 CBUFFER_END
 #endif
+
+// Shared cookie texture sampled by all additional lights that have cookies enabled.
+// NOTE: this is a single shared texture (not a per-light atlas) - if more than one
+// visible light has a different cookie assigned, only the last one processed in
+// PushDynamicLightingParameters will "win" for this frame.
+TEXTURE2D(_AdditionalLightsCookieTex);
 
 float4x4 OptimizeProjectionMatrix(float4x4 M)
 {

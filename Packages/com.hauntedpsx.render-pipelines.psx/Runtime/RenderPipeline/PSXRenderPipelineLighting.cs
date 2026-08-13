@@ -27,6 +27,12 @@ namespace HauntedPSX.RenderPipelines.PSX.Runtime
         Vector4[] m_AdditionalLightAttenuations;
         Vector4[] m_AdditionalLightSpotDirections;
         Vector4[] m_AdditionalLightOcclusionProbeChannels;
+        Vector4[] m_AdditionalLightsCookieRight;
+        Vector4[] m_AdditionalLightsCookieUp;
+
+        // Single shared cookie texture for this frame. Last spot light processed
+        // that has a Light.cookie assigned "wins" this slot.
+        Texture m_AdditionalLightsCookieTexture;
 
         public enum MixedLightingSetup
         {
@@ -84,6 +90,10 @@ namespace HauntedPSX.RenderPipelines.PSX.Runtime
                     return;
                 }
 
+                // Reset the shared cookie texture each frame - it will be set below if any
+                // visible spot light has a cookie assigned.
+                m_AdditionalLightsCookieTexture = null;
+
                 for (int i = 0, lightIter = 0; i < cullingResults.visibleLights.Length && lightIter < dynamicLightsMaxCount; ++i)
                 {
                     VisibleLight light = cullingResults.visibleLights[i];
@@ -96,7 +106,9 @@ namespace HauntedPSX.RenderPipelines.PSX.Runtime
                             out m_AdditionalLightColors[lightIter],
                             out m_AdditionalLightAttenuations[lightIter],
                             out m_AdditionalLightSpotDirections[lightIter],
-                            out m_AdditionalLightOcclusionProbeChannels[lightIter]
+                            out m_AdditionalLightOcclusionProbeChannels[lightIter],
+                            out m_AdditionalLightsCookieRight[lightIter],
+                            out m_AdditionalLightsCookieUp[lightIter]
                         );
                         lightIter++;
                     }
@@ -107,6 +119,9 @@ namespace HauntedPSX.RenderPipelines.PSX.Runtime
                 cmd.SetGlobalVectorArray(PSXShaderIDs._AdditionalLightsAttenuation, m_AdditionalLightAttenuations);
                 cmd.SetGlobalVectorArray(PSXShaderIDs._AdditionalLightsSpotDir, m_AdditionalLightSpotDirections);
                 cmd.SetGlobalVectorArray(PSXShaderIDs._AdditionalLightOcclusionProbeChannel, m_AdditionalLightOcclusionProbeChannels);
+                cmd.SetGlobalVectorArray(PSXShaderIDs._AdditionalLightsCookieRight, m_AdditionalLightsCookieRight);
+                cmd.SetGlobalVectorArray(PSXShaderIDs._AdditionalLightsCookieUp, m_AdditionalLightsCookieUp);
+                cmd.SetGlobalTexture(PSXShaderIDs._AdditionalLightsCookieTex, m_AdditionalLightsCookieTexture != null ? m_AdditionalLightsCookieTexture : Texture2D.whiteTexture);
 
                 cmd.SetGlobalVector(PSXShaderIDs._AdditionalLightsCount, new Vector4(dynamicLightsMaxPerObjectCount, 0.0f, 0.0f, 0.0f));
 
@@ -131,6 +146,8 @@ namespace HauntedPSX.RenderPipelines.PSX.Runtime
                 m_AdditionalLightAttenuations = new Vector4[capacity];
                 m_AdditionalLightSpotDirections = new Vector4[capacity];
                 m_AdditionalLightOcclusionProbeChannels = new Vector4[capacity];
+                m_AdditionalLightsCookieRight = new Vector4[capacity];
+                m_AdditionalLightsCookieUp = new Vector4[capacity];
             }
         }
 
@@ -178,13 +195,16 @@ namespace HauntedPSX.RenderPipelines.PSX.Runtime
             return additionalLightsCount;
         }
 
-        void InitializeLightConstants(NativeArray<VisibleLight> lights, int lightIndex, out Vector4 lightPos, out Vector4 lightColor, out Vector4 lightAttenuation, out Vector4 lightSpotDir, out Vector4 lightOcclusionProbeChannel)
+        void InitializeLightConstants(NativeArray<VisibleLight> lights, int lightIndex, out Vector4 lightPos, out Vector4 lightColor, out Vector4 lightAttenuation, out Vector4 lightSpotDir, out Vector4 lightOcclusionProbeChannel, out Vector4 lightCookieRight, out Vector4 lightCookieUp)
         {
             lightPos = k_DefaultLightPosition;
             lightColor = k_DefaultLightColor;
             lightAttenuation = k_DefaultLightAttenuation;
             lightSpotDir = k_DefaultLightSpotDirection;
             lightOcclusionProbeChannel = k_DefaultLightsProbeChannel;
+            // .w == 0 means "no cookie" - this is the flag the shader checks.
+            lightCookieRight = Vector4.zero;
+            lightCookieUp = Vector4.zero;
 
             // When no lights are visible, main light will be set to -1.
             // In this case we initialize it to default values and return
@@ -261,6 +281,28 @@ namespace HauntedPSX.RenderPipelines.PSX.Runtime
                 float add = -cosOuterAngle * invAngleRange;
                 lightAttenuation.z = invAngleRange;
                 lightAttenuation.w = add;
+
+                // Cookie projection: build a right/up basis for this spot light, pre-scaled
+                // so that the shader only needs two dot products + a divide to get cookie UVs.
+                Light spotLightComponent = lightData.light;
+                if (spotLightComponent != null && spotLightComponent.cookie != null)
+                {
+                    Vector3 lightRightWS = lightData.localToWorldMatrix.GetColumn(0);
+                    Vector3 lightUpWS = lightData.localToWorldMatrix.GetColumn(1);
+
+                    // Use the outer spot angle as the cookie's field of view, matching how
+                    // Unity's built-in pipeline projects spotlight cookies.
+                    float tanHalfAngle = Mathf.Tan(lightData.spotAngle * 0.5f * Mathf.Deg2Rad);
+                    float invTanHalfAngle = 1.0f / Mathf.Max(0.0001f, tanHalfAngle);
+
+                    lightCookieRight = lightRightWS * invTanHalfAngle;
+                    lightCookieRight.w = 1.0f; // enabled flag, checked in DynamicLighting.hlsl
+                    lightCookieUp = lightUpWS * invTanHalfAngle;
+                    lightCookieUp.w = 0.0f;
+
+                    // Only one shared texture slot per frame - last cookie-bearing light wins.
+                    m_AdditionalLightsCookieTexture = spotLightComponent.cookie;
+                }
             }
 
             Light light = lightData.light;
@@ -318,7 +360,11 @@ namespace HauntedPSX.RenderPipelines.PSX.Runtime
                         spotLight.angularFalloff = GlobalIllumination.AngularFalloffType.AnalyticAndInnerAngle;
                         lightData.Init(ref spotLight);
                         break;
+#if UNITY_6000_0_OR_NEWER
+                    case LightType.Rectangle:
+#else
                     case LightType.Area:
+#endif
                         GlobalIllumination.RectangleLight rectangleLight = new GlobalIllumination.RectangleLight();
                         GlobalIllumination.LightmapperUtils.Extract(light, ref rectangleLight);
                         rectangleLight.mode = GlobalIllumination.LightMode.Baked;
@@ -339,7 +385,13 @@ namespace HauntedPSX.RenderPipelines.PSX.Runtime
                 directColor = GlobalIllumination.LinearColor.Convert(light.color, light.intensity);
                 indirectColor = GlobalIllumination.LightmapperUtils.ExtractIndirect(light);
 
-                if (light.type != LightType.Area && light.type != LightType.Disc)
+                if (
+#if UNITY_6000_0_OR_NEWER
+                    light.type != LightType.Rectangle
+#else
+                    light.type != LightType.Area
+#endif
+                    && light.type != LightType.Disc)
                 {
                     // Division by PI is handled at runtime in the shaders when evaluating lambert, rather than being baked into the light color.
                     directColor.intensity /= Mathf.PI;
@@ -362,6 +414,6 @@ namespace HauntedPSX.RenderPipelines.PSX.Runtime
             }
             Debug.LogWarning("Realtime GI is not supported in HPSXRP.");
 #endif
-        };
+                };
     }
 }

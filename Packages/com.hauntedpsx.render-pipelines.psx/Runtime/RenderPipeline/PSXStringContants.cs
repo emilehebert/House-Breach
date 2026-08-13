@@ -7,6 +7,10 @@ namespace HauntedPSX.RenderPipelines.PSX.Runtime
     {
         public static readonly string s_PackagePath = "Packages/com.hauntedpsx.render-pipelines.psx";
         public static readonly string s_GlobalRenderPipelineStr = "PSXRenderPipeline";
+        public static readonly string s_CommandBufferRenderOpaqueStr = "PSXRenderPipeline.RenderOpaque";
+        public static readonly string s_CommandBufferRenderTransparentStr = "PSXRenderPipeline.RenderTransparent";
+        public static readonly string s_CommandBufferRenderSkyboxStr = "PSXRenderPipeline.RenderSkybox";
+        public static readonly string s_CommandBufferRenderLegacyCanvasUIStr = "PSXRenderPipeline.RenderLegacyCanvasUI";
         public static readonly string s_CommandBufferRenderForwardStr = "PSXRenderPipeline.RenderForward";
         public static readonly string s_CommandBufferRenderPreMainStr = "PSXRenderPipeline.RenderPreMain";
         public static readonly string s_CommandBufferRenderPreUIOverlayStr = "PSXRenderPipeline.RenderPreUIOverlay";
@@ -196,6 +200,8 @@ namespace HauntedPSX.RenderPipelines.PSX.Runtime
         public static readonly int _BakedLightingMultiplier = Shader.PropertyToID("_BakedLightingMultiplier");
         public static readonly int _VertexColorLightingMultiplier = Shader.PropertyToID("_VertexColorLightingMultiplier");
         public static readonly int _DynamicLightingMultiplier = Shader.PropertyToID("_DynamicLightingMultiplier");
+        public static readonly int _LightingClampMode = Shader.PropertyToID("_LightingClampMode");
+        public static readonly int _LightingClampParameters = Shader.PropertyToID("_LightingClampParameters");
         public static readonly int _AlphaClippingDitherTexture = Shader.PropertyToID("_AlphaClippingDitherTexture");
         public static readonly int _AlphaClippingDitherSize = Shader.PropertyToID("_AlphaClippingDitherSize");
         public static readonly int _AdditionalLightsPosition = Shader.PropertyToID("_AdditionalLightsPosition");
@@ -204,6 +210,9 @@ namespace HauntedPSX.RenderPipelines.PSX.Runtime
         public static readonly int _AdditionalLightsSpotDir = Shader.PropertyToID("_AdditionalLightsSpotDir");
         public static readonly int _AdditionalLightOcclusionProbeChannel = Shader.PropertyToID("_AdditionalLightOcclusionProbeChannel");
         public static readonly int _AdditionalLightsCount = Shader.PropertyToID("_AdditionalLightsCount");
+        public static readonly int _AdditionalLightsCookieRight = Shader.PropertyToID("_AdditionalLightsCookieRight");
+        public static readonly int _AdditionalLightsCookieUp = Shader.PropertyToID("_AdditionalLightsCookieUp");
+        public static readonly int _AdditionalLightsCookieTex = Shader.PropertyToID("_AdditionalLightsCookieTex");
         public static readonly int _CompressionAccuracyThresholdAndInverse = Shader.PropertyToID("_CompressionAccuracyThresholdAndInverse");
         public static readonly int _CompressionSource = Shader.PropertyToID("_CompressionSource");
         public static readonly int _CompressionSourceIndicesMinMax = Shader.PropertyToID("_CompressionSourceIndicesMinMax");

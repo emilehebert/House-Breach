@@ -36,7 +36,7 @@ public class CinemachineHeadBob : CinemachineExtension
     void Update()
     {
         if (PlayerController.Instance == null) return;
-        if (MenuManager.IsPaused) return;
+        if (GameManager.IsPaused) return;
     
         float speed = 0f;
         if (PlayerController.Instance.isGrounded)

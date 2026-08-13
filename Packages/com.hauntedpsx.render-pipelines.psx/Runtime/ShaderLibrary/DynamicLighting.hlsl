@@ -118,6 +118,28 @@ Light GetAdditionalPerObjectLight(int perObjectLightIndex, float3 positionWS, ha
     {
         attenuation *= AdditionalLightShadow(shadowMask, occlusionProbeChannels);
     }
+
+    // Light cookie: project positionWS into the light's right/up basis (pre-scaled by
+    // 1 / tan(halfSpotAngle) on the CPU) to get a 0-1 UV, then sample the shared cookie texture.
+    half4 cookieRight = _AdditionalLightsCookieRight[perObjectLightIndex];
+    if (cookieRight.w > 0.5h)
+    {
+        half4 cookieUp = _AdditionalLightsCookieUp[perObjectLightIndex];
+
+        float lz = dot(lightVector, spotDirection.xyz);
+        float lx = -dot(lightVector, cookieRight.xyz);
+        float ly = -dot(lightVector, cookieUp.xyz);
+        float2 cookieUV = (float2(lx, ly) / max(lz, 1e-4)) * 0.5 + 0.5;
+
+        half insideCookieFrustum = (lz > 0.0 && all(cookieUV > 0.0) && all(cookieUV < 1.0)) ? 1.0h : 0.0h;
+
+        // Cookie textures conventionally store their pattern in the Alpha channel (this matches
+        // Unity's own built-in spotlight cookie sampling), with RGB often left blank/black.
+        // Sample .a here rather than .rgb.
+        half cookieMask = SAMPLE_TEXTURE2D_LOD(_AdditionalLightsCookieTex, s_linear_clamp_sampler, saturate(cookieUV), 0).a;
+
+        color *= insideCookieFrustum * cookieMask;
+    }
     
     Light light;
     light.direction = lightDirection;

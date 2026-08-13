@@ -50,8 +50,19 @@ public static class FocusStack
         int lastIndex = stack.Count - 1;
         IFocusable top = stack[lastIndex];
         stack.RemoveAt(lastIndex);
-        top.OnCancelFocus();
 
+        // top might be a destroyed Unity object — interface references don't
+        // get Unity's "destroyed == null" override, so calling straight
+        // through could throw instead of failing safely. Well-behaved
+        // IFocusables already pop themselves in OnDisable, so this is a
+        // last-resort guard, not the primary safety net.
+        if (top is Object unityObj && unityObj == null)
+        {
+            RefreshCursor();
+            return true;
+        }
+
+        top.OnCancelFocus();
         RefreshCursor();
         return true;
     }
@@ -70,7 +81,7 @@ public static class FocusStack
     /// </summary>
     public static void RefreshCursor()
     {
-        bool shouldShow = MenuManager.IsMenuOpen || stack.Any(f => f.WantsCursorVisible);
+        bool shouldShow = GameManager.IsMenuOpen || stack.Any(f => f.WantsCursorVisible);
         Cursor.visible = shouldShow;
         Cursor.lockState = shouldShow ? CursorLockMode.None : CursorLockMode.Locked;
     }

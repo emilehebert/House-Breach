@@ -123,19 +123,26 @@ public class PlayerController : MonoBehaviour
 
     void OnDestroy()
     {
+        // Without this guard, a destroyed DUPLICATE would still disable the
+        // shared InputActionReferences (they point at the same underlying
+        // InputAction everyone reads) — silently breaking movement for the
+        // real, surviving PlayerController with no clue why.
+        if (Instance != this) return;
+
         DisableInputActions();
     }
 
     private void Awake() {
         if (Instance != null && Instance != this) {
-            Destroy(this); // Prevent duplicates
+            Destroy(gameObject); // Prevent duplicates — whole object, not just this component,
+                                  // so a duplicate doesn't leave a "zombie" camera/collider behind.
         } else {
             Instance = this;
         }
     }
     void Update()
     {
-        if (MenuManager.IsPaused) return;
+        if (GameManager.IsPaused) return;
 
         HandleFocusBackInput();
         HandleInput();
@@ -155,8 +162,13 @@ public class PlayerController : MonoBehaviour
     void InitializeComponents()
     {
         controller = GetComponent<CharacterController>();
-        cameraTransform = Camera.main.transform;
-        
+
+        // Camera.main can be null (e.g. nothing tagged "MainCamera" yet) —
+        // calling .transform directly on it would throw before the null
+        // check below ever ran.
+        Camera mainCam = Camera.main;
+        cameraTransform = mainCam != null ? mainCam.transform : null;
+
         if (cameraTransform == null)
         {
             Debug.LogWarning("Main camera not found. Player controller may not work correctly.");
@@ -672,7 +684,9 @@ public class PlayerController : MonoBehaviour
             if (CanJump(out float jumpHeightMultiplier))
             {
                 playerVelocity.y = Mathf.Sqrt(jumpHeight * jumpHeightMultiplier * -2f * gravity);
-                jumpAudio.PlayRandom(audioSource);
+
+                if (jumpAudio != null && audioSource != null)
+                    jumpAudio.PlayRandom(audioSource);
             }
         }
     }

@@ -78,7 +78,7 @@ Material:
     - _VertexColorMode: 0
     - _ZWrite: 0
     m_Colors:
-    - _AlphaClippingScaleBiasMinMax: {r: 1.9752079, g: -0.97520727, b: 0.49372384, a: 0.99999964}
+    - _AlphaClippingScaleBiasMinMax: {r: 1.975208, g: -0.4646093, b: 0.23522043, a: 0.7414962}
     - _DoubleSidedConstants: {r: 1, g: 1, b: 1, a: 0}
     - _DrawDistanceOverride: {r: 45, g: 2025, b: 0, a: 0}
     - _EmissionColor: {r: 1, g: 1, b: 1, a: 0}

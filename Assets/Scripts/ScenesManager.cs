@@ -13,7 +13,8 @@ public class ScenesManager : MonoBehaviour
         if (Instance == null)
         {
             Instance = this;
-            DontDestroyOnLoad(transform.root.gameObject); // Optional: keeps this object alive across scenes
+            transform.SetParent(null);
+            DontDestroyOnLoad(gameObject);
         }
         else
         {
@@ -25,6 +26,9 @@ public class ScenesManager : MonoBehaviour
     {
         MainMenu,
         Office,
+        House01,
+        // Add one entry per location scene you create — the name must
+        // match that Scene's actual name in Build Settings exactly.
     }
 
     public void LoadScene(Scene scene)
