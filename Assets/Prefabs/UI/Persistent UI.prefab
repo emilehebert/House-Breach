@@ -3049,6 +3049,7 @@ MonoBehaviour:
   mainMenuPanel: {fileID: 6965608785142371917}
   pauseMenuPanel: {fileID: 3688313486621857187}
   optionsMenuPanel: {fileID: 7639436451911118039}
+  leaveButtonText: {fileID: 2950591383929557876}
 --- !u!114 &6480550035662935316
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -76,6 +76,7 @@ public class PlayerController : MonoBehaviour
     private CharacterController controller;
     private Vector3 playerVelocity;
     private bool wasGroundedWhenCrouchStarted = false;
+    private bool skipMoveThisFrame = false;
 
     // Airing detection variables
     private float timeStartedFalling = 0f;
@@ -132,13 +133,16 @@ public class PlayerController : MonoBehaviour
         DisableInputActions();
     }
 
-    private void Awake() {
-        if (Instance != null && Instance != this) {
-            Destroy(gameObject); // Prevent duplicates — whole object, not just this component,
-                                  // so a duplicate doesn't leave a "zombie" camera/collider behind.
-        } else {
-            Instance = this;
-        }
+    void OnEnable()
+    {
+        Instance = this;
+        skipMoveThisFrame = true; // CharacterController needs a frame to fully wake up after SetActive(true)
+    }
+
+    void OnDisable()
+    {
+        if (Instance == this)
+            Instance = null;
     }
     void Update()
     {
@@ -536,8 +540,15 @@ public class PlayerController : MonoBehaviour
         // inactive controller". playerVelocity continue d'être calculée plus
         // haut sans problème, elle est juste ignorée tant que le controller
         // ne peut pas bouger.
-        if (controller.enabled)
-            controller.Move(playerVelocity * Time.deltaTime);
+        Debug.Log($"[{name}] enabled={controller.enabled} active={gameObject.activeInHierarchy} skip={skipMoveThisFrame} moveInput={moveInput}");
+
+        if (controller.enabled && gameObject.activeInHierarchy)
+        {
+            if (skipMoveThisFrame)
+                skipMoveThisFrame = false;
+            else
+                controller.Move(playerVelocity * Time.deltaTime);
+        }
     }
 
     Vector3 CalculateMovementDirection()

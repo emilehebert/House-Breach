@@ -10,6 +10,11 @@ public interface IInteractable
     AnimationClip GetInteractAnimation();
 }
 
+// Lives on its own object, NOT on either player character — so it stays
+// active and keeps working no matter which body (office, candidate, future
+// characters) is currently possessed. Animator and inventory are looked
+// up fresh from PlayerDriver.Instance.CurrentBody each time instead of
+// being fixed to one GameObject, since each character keeps its own.
 public class InteractionSystem : MonoBehaviour
 {
     [Header("Detection")]
@@ -25,37 +30,17 @@ public class InteractionSystem : MonoBehaviour
     [SerializeField] private Sprite interactCursorSprite;
 
     [Header("Input")]
-    [Tooltip("Nouvelle action Input System pour interagir (touche E). Crée-la dans ton asset .inputactions, comme moveAction/jumpAction sur le PlayerController.")]
+    [Tooltip("Nouvelle action Input System pour interagir (touche E).")]
     [SerializeField] private InputActionReference interactAction;
 
     private string interactClipName = "Interact"; // Name of the slot to swap
 
-    private Animator playerAnimator;
-    private AnimatorOverrideController playerOverride;
-
-    private Camera playerCamera;
-    private Inventory inventory;
     private IInteractable currentInteractable;
-
-    void Start()
-    {
-        playerAnimator = GetComponentInChildren<Animator>();
-        playerCamera = GetComponentInChildren<Camera>();
-        inventory = GetComponent<Inventory>();
-
-        // Grab the CLONE that Inventory.cs just created
-        playerOverride = playerAnimator.runtimeAnimatorController as AnimatorOverrideController;
-    }
 
     void OnEnable()
     {
         if (interactAction != null)
             interactAction.action.Enable();
-
-        // Bring the crosshair back when interaction turns back on (e.g.
-        // leaving a screen's focus) — it was hidden entirely in OnDisable.
-        if (cursorImage != null)
-            cursorImage.gameObject.SetActive(true);
     }
 
     void OnDisable()
@@ -65,9 +50,6 @@ public class InteractionSystem : MonoBehaviour
         if (interactionText != null)
             interactionText.gameObject.SetActive(false);
 
-        // Hide the crosshair entirely rather than just resetting its sprite —
-        // there's nothing to interact with while this system is disabled, so
-        // it shouldn't stay on screen.
         if (cursorImage != null)
             cursorImage.gameObject.SetActive(false);
 
@@ -76,12 +58,18 @@ public class InteractionSystem : MonoBehaviour
 
     void Update()
     {
+        if (PlayerDriver.Instance == null || PlayerDriver.Instance.CurrentBody == null) return;
+
         UpdateUI(CheckForInteractable());
+
         if (currentInteractable != null)
         {
             bool interactPressed = interactAction != null && interactAction.action.WasPressedThisFrame();
 
-            if (interactPressed && !inventory.isUsingItem)
+            Inventory inventory = PlayerDriver.Instance.CurrentBody.GetComponent<Inventory>();
+            bool usingItem = inventory != null && inventory.isUsingItem;
+
+            if (interactPressed && !usingItem)
                 DoInteract();
         }
     }
@@ -98,8 +86,15 @@ public class InteractionSystem : MonoBehaviour
 
     private bool CheckForInteractable()
     {
+        Camera cam = Camera.main;
+        if (cam == null)
+        {
+            currentInteractable = null;
+            return false;
+        }
+
         Vector3 center = new Vector3(Screen.width, Screen.height, 0f) * 0.5f;
-        var ray    = playerCamera.ScreenPointToRay(center);
+        var ray = cam.ScreenPointToRay(center);
 
         if (Physics.Raycast(ray, out var hit, interactionRange, interactionLayer))
         {
@@ -125,22 +120,22 @@ public class InteractionSystem : MonoBehaviour
     {
         if (currentInteractable == null) return;
 
-        // 1. Get the animation from the door/button
         AnimationClip newClip = currentInteractable.GetInteractAnimation();
-        
-        // 2. Swap ONLY the interact slot
-        if (newClip != null && playerOverride != null)
+
+        if (newClip != null)
         {
-            playerOverride[interactClipName] = newClip;
-            
-            // 3. Play the animation
-            playerAnimator.SetTrigger("Interact");
+            Animator animator = PlayerDriver.Instance.CurrentBody.GetComponentInChildren<Animator>();
+            if (animator != null && animator.runtimeAnimatorController is AnimatorOverrideController overrideController)
+            {
+                overrideController[interactClipName] = newClip;
+                animator.SetTrigger("Interact");
+            }
         }
 
-        // 4. Run the logic
+        // Run the logic
         currentInteractable.Interact();
-        
+
         // Hide UI
-        if(!CheckForInteractable()) interactionText.gameObject.SetActive(false);
+        if (!CheckForInteractable()) interactionText.gameObject.SetActive(false);
     }
 }

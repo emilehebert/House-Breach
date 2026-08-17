@@ -1,3 +1,4 @@
+using TMPro;
 using UnityEngine;
 
 /// <summary>
@@ -15,6 +16,10 @@ public class MenuManager : MonoBehaviour
 
     [Header("Shared Panels")]
     [SerializeField] GameObject optionsMenuPanel;
+
+    [Header("Pause Menu Extras")]
+    [Tooltip("The same button's label — reads \"Leave\" in the Office, \"Leave Mission\" during a mission.")]
+    [SerializeField] TMP_Text leaveButtonText;
 
     bool optionsOpen = false;
     GameManager.GameState? lastSeenState = null;
@@ -47,6 +52,9 @@ public class MenuManager : MonoBehaviour
         pauseMenuPanel.SetActive(state == GameManager.GameState.Paused);
         optionsMenuPanel.SetActive(false);
         optionsOpen = false;
+
+        if (leaveButtonText != null)
+            leaveButtonText.text = GamePhaseTracker.Current == GamePhase.Mission ? "Leave Mission" : "Leave";
     }
 
     // ---------- Options is a panel layered on top of the current state, not its own state ----------
@@ -76,5 +84,11 @@ public class MenuManager : MonoBehaviour
 
     public void OnExitPressed() => GameManager.Instance.QuitGame();
 
-    public void OnLeavePressed() => GameManager.Instance.LoadTitleScene();
+    public void OnLeavePressed()
+    {
+        if (GamePhaseTracker.Current == GamePhase.Mission)
+            MissionData.LeaveEarly();
+        else
+            GameManager.Instance.LoadTitleScene();
+    }
 }
