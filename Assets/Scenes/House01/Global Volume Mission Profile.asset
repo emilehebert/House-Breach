@@ -42,7 +42,7 @@ MonoBehaviour:
     dimension: 1
   grateMaskScale:
     m_OverrideState: 1
-    m_Value: 1
+    m_Value: 2
   scanlineSharpness:
     m_OverrideState: 1
     m_Value: 1
@@ -57,7 +57,7 @@ MonoBehaviour:
     m_Value: 0
   noiseIntensity:
     m_OverrideState: 1
-    m_Value: 0.071
+    m_Value: 0.025
   noiseSaturation:
     m_OverrideState: 1
     m_Value: 0.756

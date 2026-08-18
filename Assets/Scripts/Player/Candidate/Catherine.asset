@@ -13,6 +13,6 @@ MonoBehaviour:
   m_Name: Catherine
   m_EditorClassIdentifier: 
   candidateName: Catherine
-  height: 175
+  height: 2
   weight: 144
   speed: 2.5

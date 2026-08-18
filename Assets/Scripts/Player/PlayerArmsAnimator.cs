@@ -5,13 +5,16 @@ public class PlayerArmsAnimator : MonoBehaviour
     [Header("References")]
     [SerializeField] private Animator armsAnimator;
 
-    // 1. Declare the variable here so it can be used in the methods below
-    private PlayerController player;
+    // This rig lives under its own body's CameraFPS (Player Office/Player
+    // Mission > CameraFPS > ... > FP_Arms), which is exactly what gets
+    // toggled on/off on possession — so this always finds the right body
+    // and never needs to check "is this body currently possessed" itself:
+    // Update() simply doesn't run while that hierarchy is inactive.
+    private PlayerBody body;
 
     private void Start()
     {
-        // It is safer to find the reference once in Start, rather than every frame
-        player = PlayerController.Instance;
+        body = GetComponentInParent<PlayerBody>();
 
         if (armsAnimator == null)
             armsAnimator = GetComponent<Animator>();
@@ -19,31 +22,15 @@ public class PlayerArmsAnimator : MonoBehaviour
 
     private void Update()
     {
-        // Safety check: ensure player exists before trying to read data
-        if (player == null)
-        {
-            player = PlayerController.Instance; // Try to find it again
-            if (player == null) return; // If still null, do nothing
-        }
+        if (body == null) return;
 
         UpdateAnimationStates();
     }
 
     private void UpdateAnimationStates()
     {
-        // 2. Now you can use the 'player' variable safely
-        
-        // Handle Airing
-        armsAnimator.SetBool("Airing", player.isAiring);
-
-        // Handle Grounded
-        armsAnimator.SetBool("Grounded", player.isGrounded);
-
-        // Handle Speed`
-
-        if(player.enabled)
-            armsAnimator.SetFloat("Speed", player.currentHorizontalSpeed);
-        else         
-            armsAnimator.SetFloat("Speed", 0f);
+        armsAnimator.SetBool("Airing", body.isAiring);
+        armsAnimator.SetBool("Grounded", body.isGrounded);
+        armsAnimator.SetFloat("Speed", body.currentHorizontalSpeed);
     }
 }

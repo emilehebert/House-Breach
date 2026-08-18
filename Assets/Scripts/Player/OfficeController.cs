@@ -1,110 +1,73 @@
 using UnityEngine;
-using UnityEngine.InputSystem;
 
-// Simple movement for the office character — just walking, no jump,
-// crouch, slopes, or air control. The candidate keeps using the full
-// PlayerController.cs for actual mission gameplay.
+// Lightweight possessable body for the office worker: walk + gravity only,
+// no jump/crouch/slopes/inventory — deliberately asymmetric with PlayerBody,
+// same shape as e.g. Call of Duty's RC-XD (a simpler body you can freely
+// swap into/out of, main body stays wherever it was left).
 [RequireComponent(typeof(CharacterController))]
-public class OfficeController : MonoBehaviour
+public class OfficeController : MonoBehaviour, IPossessable
 {
     [Header("Movement")]
     public float walkSpeed = 3f;
     public float gravity = -20f;
 
     [Header("Camera")]
-    public Transform camTransform;
+    [Tooltip("This body's own camera rig — only enabled while possessed.")]
+    public GameObject cameraObject;
 
-    [Header("Input Actions")]
-    public InputActionReference moveAction;
-    [Tooltip("Exits an active focus (chair/screen). Same LeftShift action as before.")]
-    public InputActionReference backAction;
-
-    // Same nested-lock pattern as PlayerController, so overlapping freezes
-    // (e.g. seated AND focused on a screen) still resolve correctly.
-    private int inputLockCount = 0;
-    public bool InputEnabled => inputLockCount <= 0;
+    [Header("State (read-only)")]
+    public bool isGrounded;
+    [HideInInspector] public float currentHorizontalSpeed;
 
     private CharacterController controller;
     private Vector3 velocity;
-    private Vector2 moveInput;
 
-    void Start()
-    {
-        controller = GetComponent<CharacterController>();
+    public GameObject GameObject => gameObject;
+    public bool IsPossessed => PlayerDriver.Instance != null && (Object)PlayerDriver.Instance.CurrentBody == this;
+    public bool IsGrounded => isGrounded;
+    public float CurrentHorizontalSpeed => currentHorizontalSpeed;
 
-        if (moveAction != null) moveAction.action.Enable();
-        if (backAction != null) backAction.action.Enable();
-    }
+    void Awake() => controller = GetComponent<CharacterController>();
 
-    void OnDestroy()
-    {
-        if (moveAction != null) moveAction.action.Disable();
-        if (backAction != null) backAction.action.Disable();
-    }
-
+    // Always ticks, possessed or not — same reasoning as PlayerBody.Update():
+    // nothing should glitch or pop when you switch back to this body later.
     void Update()
     {
-        if (GameManager.IsPaused) return;
+        isGrounded = controller.isGrounded;
 
-        HandleFocusBackInput();
-        HandleInput();
-        HandleMovement();
-        ApplyGravity();
-    }
-
-    void HandleFocusBackInput()
-    {
-        if (backAction == null) return;
-        if (!backAction.action.WasPressedThisFrame()) return;
-
-        if (FocusStack.IsActive)
-            FocusStack.TryHandleCancel();
-    }
-
-    void HandleInput()
-    {
-        if (!InputEnabled)
+        if (!IsPossessed)
         {
-            moveInput = Vector2.zero;
-            return;
+            velocity.x = 0f;
+            velocity.z = 0f;
         }
 
-        moveInput = moveAction != null ? moveAction.action.ReadValue<Vector2>() : Vector2.zero;
+        if (isGrounded && velocity.y < 0f) velocity.y = -2f;
+        velocity.y += gravity * Time.deltaTime;
+
+        if (controller.enabled)
+            controller.Move(velocity * Time.deltaTime);
     }
 
-    void HandleMovement()
+    // Called by PlayerDriver only while this body is possessed.
+    public void Tick(Vector2 moveInput, bool jumpInput, bool runInput, bool crouchInput)
     {
-        if (camTransform == null) return;
+        // Looked up fresh (not cached) so it always resolves to THIS body's
+        // own active camera, same pattern as PlayerBody.
+        Camera cam = Camera.main;
+        if (cam == null) return;
 
         Vector3 move = new Vector3(moveInput.x, 0f, moveInput.y);
-        move = camTransform.forward * move.z + camTransform.right * move.x;
+        move = cam.transform.forward * move.z + cam.transform.right * move.x;
         move.y = 0f;
 
-        controller.Move(move.normalized * walkSpeed * Time.deltaTime);
+        Vector3 horiz = move.normalized * walkSpeed;
+        velocity.x = horiz.x;
+        velocity.z = horiz.z;
+        currentHorizontalSpeed = horiz.magnitude;
     }
 
-    void ApplyGravity()
+    public void SetCameraActive(bool active)
     {
-        if (controller.isGrounded && velocity.y < 0)
-            velocity.y = -2f;
-
-        velocity.y += gravity * Time.deltaTime;
-        controller.Move(velocity * Time.deltaTime);
-    }
-
-    // Same shape as PlayerController's — CandidateFocusHandoff calls this.
-    public void SetInputEnabled(bool value)
-    {
-        inputLockCount = value ? Mathf.Max(0, inputLockCount - 1) : inputLockCount + 1;
-
-        if (!InputEnabled)
-        {
-            moveInput = Vector2.zero;
-            if (moveAction != null) moveAction.action.Disable();
-        }
-        else
-        {
-            if (moveAction != null) moveAction.action.Enable();
-        }
+        if (cameraObject != null) cameraObject.SetActive(active);
     }
 }

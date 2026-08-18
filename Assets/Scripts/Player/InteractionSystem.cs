@@ -41,6 +41,12 @@ public class InteractionSystem : MonoBehaviour
     {
         if (interactAction != null)
             interactAction.action.Enable();
+
+        // Mirrors OnDisable()'s cleanup — without this, the cursor image
+        // stays hidden forever after the first focus/unfocus, since nothing
+        // else in this script ever re-activates its GameObject.
+        if (cursorImage != null)
+            cursorImage.gameObject.SetActive(true);
     }
 
     void OnDisable()
@@ -66,7 +72,7 @@ public class InteractionSystem : MonoBehaviour
         {
             bool interactPressed = interactAction != null && interactAction.action.WasPressedThisFrame();
 
-            Inventory inventory = PlayerDriver.Instance.CurrentBody.GetComponent<Inventory>();
+            Inventory inventory = PlayerDriver.Instance.CurrentBody.GameObject.GetComponent<Inventory>();
             bool usingItem = inventory != null && inventory.isUsingItem;
 
             if (interactPressed && !usingItem)
@@ -124,7 +130,7 @@ public class InteractionSystem : MonoBehaviour
 
         if (newClip != null)
         {
-            Animator animator = PlayerDriver.Instance.CurrentBody.GetComponentInChildren<Animator>();
+            Animator animator = PlayerDriver.Instance.CurrentBody.GameObject.GetComponentInChildren<Animator>();
             if (animator != null && animator.runtimeAnimatorController is AnimatorOverrideController overrideController)
             {
                 overrideController[interactClipName] = newClip;

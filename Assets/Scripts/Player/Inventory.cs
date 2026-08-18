@@ -24,10 +24,12 @@ public class Inventory : MonoBehaviour
 
     private AnimatorOverrideController playerOverride;
     private AnimationClip defaultHoldClip;
+    private PlayerBody body;
 
     private void Awake()
     {
         InitVariables();
+        body = GetComponent<PlayerBody>();
 
         // 1. Get the original asset assigned in the Inspector
         RuntimeAnimatorController originalAsset = armsAnimator.runtimeAnimatorController;
@@ -52,6 +54,14 @@ public class Inventory : MonoBehaviour
 
     private void Update()
     {
+        // Both bodies keep their Inventory ticking even while not possessed
+        // (only the camera/arms rig toggles) — skip entirely when this body
+        // isn't the one in control, so item switching doesn't fire for both
+        // bodies at once and we don't poke an armsAnimator sitting on a
+        // currently-inactive hierarchy (that's what throws "Animator is not
+        // playing an AnimatorController").
+        if (body != null && !body.IsPossessed) return;
+
         if(!isUsingItem) HandleInput();
         UpdateHoldingState();
     }

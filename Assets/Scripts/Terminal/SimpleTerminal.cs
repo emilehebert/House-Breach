@@ -34,6 +34,11 @@ public class SimpleTerminal : MonoBehaviour
     {
         BuildLookup();
 
+        // Picks up wherever the terminal's history left off, even if that
+        // was typed in a different scene's terminal (see TerminalLog).
+        if (outputText != null)
+            outputText.text = TerminalLog.History;
+
         if (inputField != null)
             inputField.onSubmit.AddListener(OnPlayerSubmit);
     }
@@ -99,7 +104,7 @@ public class SimpleTerminal : MonoBehaviour
 
             if (clear)
             {
-                outputText.text = response;
+                SetOutputText(response);
             }
             else
             {
@@ -123,10 +128,19 @@ public class SimpleTerminal : MonoBehaviour
         if (outputText == null) return;
 
         string separator = string.IsNullOrEmpty(outputText.text) ? "" : (blankLineBefore ? "\n\n" : "\n");
-        outputText.text += separator + line;
+        SetOutputText(outputText.text + separator + line);
 
         TrimHistory();
         SnapScrollToBottom();
+    }
+
+    // Every place that changes the visible log goes through here, so
+    // TerminalLog.History (and therefore every other scene's terminal)
+    // always matches what's actually on screen.
+    private void SetOutputText(string text)
+    {
+        outputText.text = text;
+        TerminalLog.History = text;
     }
 
     // Keeps memory/text length bounded over a long play session — this is
@@ -136,7 +150,7 @@ public class SimpleTerminal : MonoBehaviour
         var lines = outputText.text.Split('\n');
         if (lines.Length <= maxLines) return;
 
-        outputText.text = string.Join("\n", lines, lines.Length - maxLines, maxLines);
+        SetOutputText(string.Join("\n", lines, lines.Length - maxLines, maxLines));
     }
 
     private void SnapScrollToBottom() => SetScroll(0f);

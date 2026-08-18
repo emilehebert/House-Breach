@@ -35,13 +35,13 @@ public class CinemachineHeadBob : CinemachineExtension
     // We use Update to calculate the timing and logic, just like your old script
     void Update()
     {
-        if (PlayerController.Instance == null) return;
+        if (PlayerDriver.Instance == null || PlayerDriver.Instance.CurrentBody == null) return;
         if (GameManager.IsPaused) return;
-    
+
         float speed = 0f;
-        if (PlayerController.Instance.isGrounded)
+        if (PlayerDriver.Instance.CurrentBody.IsGrounded)
         {
-            speed = Mathf.Max(PlayerController.Instance.currentHorizontalSpeed, 0f);
+            speed = Mathf.Max(PlayerDriver.Instance.CurrentBody.CurrentHorizontalSpeed, 0f);
         }
     
         if (speed > 0.1f)

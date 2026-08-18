@@ -16,10 +16,13 @@ MonoBehaviour:
   - Help
   - Hell
   - Hep
+  clearsScreen: 1
   standaloneResponse: 'Dispatch => [name] [location]
 
     Check => [item name]
 
     Clear
-    => [location]'
+    => [location]
+
+    Stats => [candidate]'
   compatibleNouns: []

@@ -51,8 +51,8 @@ public class FocusInteractable : MonoBehaviour, IInteractable, IFocusable
         if (focusCamera != null)
             focusCamera.Priority = focusPriority;
 
-        if (PlayerController.Instance != null)
-            PlayerController.Instance.SetInputEnabled(false);
+        if (PlayerDriver.Instance != null)
+            PlayerDriver.Instance.SetInputEnabled(false);
 
         if (interactionSystem != null)
             interactionSystem.SetInteractionEnabled(false);
@@ -69,8 +69,8 @@ public class FocusInteractable : MonoBehaviour, IInteractable, IFocusable
         if (focusCamera != null)
             focusCamera.Priority = defaultPriority;
 
-        if (PlayerController.Instance != null)
-            PlayerController.Instance.SetInputEnabled(true);
+        if (PlayerDriver.Instance != null)
+            PlayerDriver.Instance.SetInputEnabled(true);
 
         if (interactionSystem != null)
             interactionSystem.SetInteractionEnabled(true);

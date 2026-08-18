@@ -10,7 +10,7 @@ using UnityEngine;
 // CharacterController) is never deactivated, which is what avoided all
 // the "Move called on inactive controller" issues from before.
 [RequireComponent(typeof(CharacterController))]
-public class PlayerBody : MonoBehaviour
+public class PlayerBody : MonoBehaviour, IPossessable
 {
     [Header("Movement")]
     public float walkSpeed = 3f;
@@ -66,6 +66,29 @@ public class PlayerBody : MonoBehaviour
     public bool isAiring = false;
     [HideInInspector] public float currentHorizontalSpeed;
 
+    [Header("Candidate Stats")]
+    [Tooltip("Weight (lbs) treated as gravity-neutral — heavier candidates fall/land harder, lighter ones less so. Tune this against whatever candidates you've authored.")]
+    public float neutralWeight = 130f;
+
+    [Header("Unsupervised Alarm")]
+    [Tooltip("How long this body can go unpossessed before the alarm fires.")]
+    public float unsupervisedAlarmDelay = 30f;
+    public UnityEngine.Events.UnityEvent onUnsupervisedAlarm;
+    private float unsupervisedTimer;
+    private bool alarmFired;
+
+    // Single canonical "is this the body currently being controlled" check —
+    // any per-body script (Inventory, arms animator, footsteps, future ones)
+    // should read this instead of re-deriving the PlayerDriver comparison itself.
+    public bool IsPossessed => PlayerDriver.Instance != null && (Object)PlayerDriver.Instance.CurrentBody == this;
+
+    // IPossessable forwarding — the fields above stay the canonical source
+    // (Inspector display, internal code like HandleAiringDetection), these
+    // just expose them generically to anything holding an IPossessable.
+    public GameObject GameObject => gameObject;
+    public bool IsGrounded => isGrounded;
+    public float CurrentHorizontalSpeed => currentHorizontalSpeed;
+
     private CharacterController controller;
     private Vector3 playerVelocity;
     private bool wasGroundedWhenCrouchStarted = false;
@@ -97,6 +120,14 @@ public class PlayerBody : MonoBehaviour
 
     void Start()
     {
+        // Applied BEFORE the crouch baseline below is captured, so a
+        // height-scaled collider/camera becomes the new standing baseline
+        // rather than fighting the un-scaled one every crouch transition.
+        // Null if this scene is being tested directly (no Dispatch ran) —
+        // Inspector-authored defaults are left alone in that case.
+        if (DispatchData.DispatchedCandidate != null)
+            ApplyCandidateStats(DispatchData.DispatchedCandidate);
+
         originalHeight = controller.height;
         originalCenter = controller.center;
         currentHeight = originalHeight;
@@ -108,6 +139,53 @@ public class PlayerBody : MonoBehaviour
             originalCameraLocalPos = camTransform.localPosition;
     }
 
+    // Maps a dispatched candidate's CV stats onto this body. speed and
+    // walkSpeed are the same unit already (both authored in the 2.5-4
+    // range), so it's a direct swap; run/crouch scale with it to keep their
+    // relative feel. Height is likewise already in meters, same as the
+    // collider, so it's a direct assignment too. Weight is the one that
+    // needs relative scaling (against the tunable neutralWeight) instead of
+    // being used directly, since candidate weight is authored in pounds,
+    // not the small numbers gravity (-20) implies.
+    public void ApplyCandidateStats(Candidate candidate)
+    {
+        if (candidate == null) return;
+
+        if (candidate.speed > 0f && walkSpeed > 0f)
+        {
+            float ratio = candidate.speed / walkSpeed;
+            walkSpeed = candidate.speed;
+            runSpeed *= ratio;
+            crouchSpeed *= ratio;
+        }
+
+        if (candidate.weight > 0f && neutralWeight > 0f)
+            gravity *= candidate.weight / neutralWeight;
+
+        if (candidate.height > 0f)
+        {
+            float oldHeight = controller.height;
+            float newHeight = candidate.height;
+            float heightDelta = newHeight - oldHeight;
+
+            controller.height = newHeight;
+
+            // Center rises by half the delta so the capsule's bottom (feet)
+            // stays planted on the ground and only the top (head) moves.
+            Vector3 center = controller.center;
+            center.y += heightDelta / 2f;
+            controller.center = center;
+
+            // Eye level rises by the full delta to match the new head height.
+            if (camTransform != null)
+            {
+                Vector3 camPos = camTransform.localPosition;
+                camPos.y += heightDelta;
+                camTransform.localPosition = camPos;
+            }
+        }
+    }
+
     // Runs always, whether or not this body is currently possessed.
     void Update()
     {
@@ -117,12 +195,12 @@ public class PlayerBody : MonoBehaviour
         UpdateCameraPosition();
         ApplyGravity();
         UpdateSpeedTracking();
+        UpdateUnsupervisedAlarm();
 
         // Not currently possessed: let horizontal velocity settle to zero
         // instead of endlessly sliding in whatever direction it was last
         // moving when control was handed off.
-        bool possessed = PlayerDriver.Instance != null && PlayerDriver.Instance.CurrentBody == this;
-        if (!possessed)
+        if (!IsPossessed)
         {
             playerVelocity.x = Mathf.Lerp(playerVelocity.x, 0, Time.deltaTime * 6f);
             playerVelocity.z = Mathf.Lerp(playerVelocity.z, 0, Time.deltaTime * 6f);
@@ -536,5 +614,25 @@ public class PlayerBody : MonoBehaviour
     void UpdateSpeedTracking()
     {
         currentHorizontalSpeed = new Vector3(playerVelocity.x, 0, playerVelocity.z).magnitude;
+    }
+
+    // Fires once per unsupervised stretch — resets the moment this body is
+    // possessed again, so leaving and coming back re-arms it rather than
+    // spamming the event every frame past the threshold.
+    void UpdateUnsupervisedAlarm()
+    {
+        if (IsPossessed)
+        {
+            unsupervisedTimer = 0f;
+            alarmFired = false;
+            return;
+        }
+
+        unsupervisedTimer += Time.deltaTime;
+        if (!alarmFired && unsupervisedTimer >= unsupervisedAlarmDelay)
+        {
+            alarmFired = true;
+            onUnsupervisedAlarm?.Invoke();
+        }
     }
 }

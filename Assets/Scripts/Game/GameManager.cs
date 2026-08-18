@@ -146,11 +146,14 @@ public class GameManager : MonoBehaviour
             pausedInputProviders.Clear();
         }
 
-        // Camera shake stays specific to the gameplay vcam
-        GameObject vcamObj = GameObject.FindWithTag("MainVCam");
-        if (vcamObj == null) return;
+        // Camera shake stays specific to the gameplay vcam — resolved via
+        // Camera.main (whichever body is currently possessed has the active
+        // camera) instead of a "MainVCam" tag nothing in the project actually
+        // carries, so this silently never fired before.
+        Camera mainCam = Camera.main;
+        if (mainCam == null) return;
 
-        var vcam = vcamObj.GetComponent<CinemachineVirtualCamera>();
+        var vcam = mainCam.GetComponentInParent<CinemachineVirtualCamera>();
         if (vcam == null) return;
 
         _noise = vcam.GetCinemachineComponent<CinemachineBasicMultiChannelPerlin>();

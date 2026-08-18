@@ -67,8 +67,8 @@ public class MountableChair : MonoBehaviour, IInteractable, IFocusable
     {
         if (isSitting) return;
 
-        if (PlayerController.Instance != null)
-            SitDown(PlayerController.Instance.gameObject);
+        if (PlayerDriver.Instance != null && PlayerDriver.Instance.CurrentBody != null)
+            SitDown(PlayerDriver.Instance.CurrentBody.GameObject);
     }
 
     public string GetInteractText() => interactText;
@@ -100,8 +100,8 @@ public class MountableChair : MonoBehaviour, IInteractable, IFocusable
         // 2. Geler les inputs de déplacement via la méthode réutilisable —
         // contrairement à "movement.enabled = false", ça ne coupe pas
         // gravité/ground-check/collider, donc pas de glitch au lever.
-        if (PlayerController.Instance != null)
-            PlayerController.Instance.SetInputEnabled(false);
+        if (PlayerDriver.Instance != null)
+            PlayerDriver.Instance.SetInputEnabled(false);
 
         // 3. Bascule caméra (sensibilité resynchronisée à chaque fois, au cas où
         // elle aurait changé entre-temps, ex: un slider de sensibilité dans les options)
@@ -142,8 +142,8 @@ public class MountableChair : MonoBehaviour, IInteractable, IFocusable
         }
 
         // 4. Redonner le contrôle
-        if (PlayerController.Instance != null)
-            PlayerController.Instance.SetInputEnabled(true);
+        if (PlayerDriver.Instance != null)
+            PlayerDriver.Instance.SetInputEnabled(true);
 
         if (popFromStack)
             FocusStack.Pop(this);

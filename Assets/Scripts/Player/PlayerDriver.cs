@@ -18,10 +18,10 @@ public class PlayerDriver : MonoBehaviour
     public InputActionReference backAction;
 
     [Header("Starting Body")]
-    [Tooltip("Whoever should be controlled the moment this scene starts — drag the office character's PlayerBody in here.")]
-    public PlayerBody startingBody;
+    [Tooltip("Whoever should be controlled the moment this scene starts. Drag a component that implements IPossessable (PlayerBody or OfficeController) in here.")]
+    public MonoBehaviour startingBody;
 
-    public PlayerBody CurrentBody { get; private set; }
+    public IPossessable CurrentBody { get; private set; }
 
     private int inputLockCount = 0;
     public bool InputEnabled => inputLockCount <= 0;
@@ -39,7 +39,11 @@ public class PlayerDriver : MonoBehaviour
     void Start()
     {
         EnableInputActions();
-        Possess(startingBody);
+
+        if (startingBody != null && startingBody is not IPossessable)
+            Debug.LogError($"PlayerDriver.startingBody ({startingBody.name}) doesn't implement IPossessable.");
+
+        Possess(startingBody as IPossessable);
     }
 
     void OnDestroy()
@@ -87,7 +91,7 @@ public class PlayerDriver : MonoBehaviour
     // Call this to switch who's being controlled. Handles the camera swap
     // too — old body's camera off, new body's camera on. Nothing else
     // needs to touch cameras or Instance references.
-    public void Possess(PlayerBody newBody)
+    public void Possess(IPossessable newBody)
     {
         if (newBody == CurrentBody) return;
 
