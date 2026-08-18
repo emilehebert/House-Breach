@@ -220,7 +220,11 @@ public class PlayerBody : MonoBehaviour, IPossessable
 
     public void SetCameraActive(bool active)
     {
-        if (cameraObject != null)
+        if (cameraObject == null) return;
+
+        if (active && MainCameraController.Instance != null)
+            MainCameraController.Instance.CutTo(cameraObject);
+        else
             cameraObject.SetActive(active);
     }
 

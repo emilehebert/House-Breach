@@ -68,6 +68,11 @@ public class OfficeController : MonoBehaviour, IPossessable
 
     public void SetCameraActive(bool active)
     {
-        if (cameraObject != null) cameraObject.SetActive(active);
+        if (cameraObject == null) return;
+
+        if (active && MainCameraController.Instance != null)
+            MainCameraController.Instance.CutTo(cameraObject);
+        else
+            cameraObject.SetActive(active);
     }
 }
