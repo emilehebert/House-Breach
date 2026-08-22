@@ -20,22 +20,27 @@ public class InputManager : MonoBehaviour
         if (_instance != null && _instance != this)
         {
             Destroy(this.gameObject);
+            return;
         }
-        else
-        {
-            _instance = this;
-        }
+
+        _instance = this;
+        transform.SetParent(null);
+        DontDestroyOnLoad(gameObject);
         playerControls = new PlayerControls();
     }
 
     private void OnEnable()
     {
-        playerControls.Enable();
+        // Null when this instance is a duplicate that Awake() is about to
+        // Destroy() — Destroy() disables the GameObject immediately (OnDisable
+        // runs this same frame), but this duplicate's Awake returned before
+        // ever assigning playerControls.
+        playerControls?.Enable();
     }
 
     private void OnDisable()
     {
-        playerControls.Disable();
+        playerControls?.Disable();
     }
 
     public Vector2 GetPlayerMovement()
