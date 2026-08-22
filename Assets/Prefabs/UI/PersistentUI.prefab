@@ -3010,7 +3010,7 @@ GameObject:
   - component: {fileID: 1203212564476107228}
   - component: {fileID: 4511889949742189865}
   m_Layer: 0
-  m_Name: Persistent UI
+  m_Name: PersistentUI
   m_TagString: Untagged
   m_Icon: {fileID: 2974397684917235467, guid: 0000000000000000d000000000000000, type: 0}
   m_NavMeshLayer: 0
