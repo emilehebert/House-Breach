@@ -22,7 +22,10 @@ public static class SaveSystem
 
     public static PlayerProgress Current { get; private set; } = new PlayerProgress();
 
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+    // PARKED — bootstrap disabled. _Unused/ isn't excluded from
+    // compilation, so this would otherwise still auto-load progress.json
+    // in the background even though nothing reads Current anymore.
+    // [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
     static void Init() => Load();
 
     public static void Load()

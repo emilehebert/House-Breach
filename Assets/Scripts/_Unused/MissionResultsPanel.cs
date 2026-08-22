@@ -1,25 +1,58 @@
 using TMPro;
 using UnityEngine;
+using UnityEngine.SceneManagement;
 using UnityEngine.UI;
 
+// PARKED — kept for reference only, not wired up. Retired at the user's
+// request (they'll build their own mission-gains display later). Moving a
+// script into _Unused/ does NOT stop it from running: this project's
+// _Unused/ folder is purely organizational, not excluded from compilation
+// (no assembly definition scopes it out), so a self-bootstrapping script
+// like this one — no scene placement needed, it just runs — keeps firing
+// regardless of which folder it physically sits in. The
+// [RuntimeInitializeOnLoadMethod] bootstrap below is commented out
+// specifically so the feature is actually off, not just relocated.
+//
 // Shows automatically the instant the player is back in the Office with an
 // unconsumed mission result waiting — covers both a successful extraction
 // and an early bail-out through the same panel. Builds its own UI at
 // runtime instead of depending on a hand-wired prefab, so there's nothing
 // to set up in the Editor: it creates itself, shows the result, and
-// destroys itself once closed. Applies the earned currency/XP exactly once
-// (gated by MissionData.ConsumeResult so it can't double-apply). Registers
-// with FocusStack like a FocusInteractable does — unlocks the cursor and
-// blocks player input without touching GameManager's Playing/Paused state.
+// destroys itself once closed. Registers with FocusStack like a
+// FocusInteractable does — unlocks the cursor and blocks player input
+// without touching GameManager's Playing/Paused state.
 public class MissionResultsPanel : MonoBehaviour, IFocusable
 {
     TMP_Text outcomeText;
     TMP_Text summaryText;
-    TMP_Text rewardText;
 
     public bool WantsCursorVisible => true;
 
-    [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    static bool sceneLoadHookRegistered;
+
+    // AfterSceneLoad only fires once per game launch, not on every later
+    // scene load — so the boot-time check alone could only ever catch a
+    // result that was already pending the instant the game started, which
+    // never happens in real play (a mission has to actually be played
+    // first). Hooking SceneManager.sceneLoaded (same pattern as
+    // MissionData) makes the check re-run every time the player lands back
+    // in Office, which is when a result is actually waiting.
+    // [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
+    static void Init()
+    {
+        CheckForPendingResult();
+
+        // Guarded — with "Enter Play Mode without domain reload" enabled,
+        // this method re-runs every Play session but static fields (and
+        // event subscriptions) survive between them, so without this guard
+        // HandleSceneLoaded would end up subscribed multiple times.
+        if (!sceneLoadHookRegistered)
+        {
+            sceneLoadHookRegistered = true;
+            SceneManager.sceneLoaded += (scene, mode) => CheckForPendingResult();
+        }
+    }
+
     static void CheckForPendingResult()
     {
         if (GamePhaseTracker.Current != GamePhase.Office || !MissionData.HasPendingResult)
@@ -35,12 +68,10 @@ public class MissionResultsPanel : MonoBehaviour, IFocusable
     {
         BuildUI();
 
-        MissionReward reward = SaveSystem.ApplyMissionResult(MissionData.Succeeded, MissionData.ElapsedMinutes);
         MissionData.ConsumeResult();
 
         outcomeText.text = MissionData.Succeeded ? "Mission Complete" : "Mission Failed";
         summaryText.text = MissionData.ResultSummary;
-        rewardText.text = $"+{reward.currency} currency   +{reward.xp} xp";
 
         if (PlayerDriver.Instance != null)
             PlayerDriver.Instance.SetInputEnabled(false);
@@ -87,7 +118,6 @@ public class MissionResultsPanel : MonoBehaviour, IFocusable
 
         outcomeText = CreateCenteredText(box.transform, "OutcomeText", 36, FontStyles.Bold);
         summaryText = CreateCenteredText(box.transform, "SummaryText", 22, FontStyles.Normal);
-        rewardText = CreateCenteredText(box.transform, "RewardText", 22, FontStyles.Normal);
 
         GameObject buttonGO = new GameObject("ContinueButton", typeof(RectTransform), typeof(Image), typeof(Button), typeof(LayoutElement));
         buttonGO.transform.SetParent(box.transform, false);

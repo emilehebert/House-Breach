@@ -4,7 +4,7 @@ using UnityEngine.UI;
 
 // Small helpers for building simple UI at runtime without a hand-wired
 // prefab or scene object — used by anything that needs to exist with zero
-// Editor-side setup (MissionResultsPanel, DebugHUD).
+// Editor-side setup (DebugHUD).
 public static class RuntimeUI
 {
     public static Canvas CreateOverlayCanvas(string name, Transform parent, int sortingOrder)
