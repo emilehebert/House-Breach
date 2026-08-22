@@ -6,9 +6,9 @@ using UnityEngine;
 /// Permet à n'importe quel état "focus" (assis sur une chaise, en train de
 /// regarder un écran, plus tard dans un mini-jeu, etc.) de s'enregistrer comme
 /// actif. Un seul point d'entrée global pour Echap/Cancel (dans MenuManager)
-/// ne fait réagir QUE le sommet de la pile. Gère aussi la visibilité du
-/// curseur de façon centralisée (pause OU un focus qui le demande), pour
-/// éviter que plusieurs scripts se marchent dessus sur Cursor.visible.
+/// ne fait réagir QUE le sommet de la pile. Cursor.visible/lockState eux-mêmes
+/// sont la responsabilité de CursorManager — FocusStack se contente de lui
+/// signaler quand le résultat "curseur visible ?" dérivé de la pile change.
 /// </summary>
 public interface IFocusable
 {
@@ -71,18 +71,19 @@ public static class FocusStack
     public static void Clear()
     {
         stack.Clear();
+        CursorManager.ClearOverrides();
         RefreshCursor();
     }
 
     /// <summary>
     /// Recalcule si le curseur doit être visible : pause OU un focus actif qui
-    /// le demande. Appelé automatiquement par Push/Pop/Clear, et à appeler
-    /// aussi depuis MenuManager quand l'état pause change.
+    /// le demande, et transmet le résultat à CursorManager. Appelé
+    /// automatiquement par Push/Pop/Clear, et à appeler aussi depuis
+    /// MenuManager quand l'état pause change.
     /// </summary>
     public static void RefreshCursor()
     {
         bool shouldShow = GameManager.IsMenuOpen || stack.Any(f => f.WantsCursorVisible);
-        Cursor.visible = shouldShow;
-        Cursor.lockState = shouldShow ? CursorLockMode.None : CursorLockMode.Locked;
+        CursorManager.Apply(shouldShow);
     }
 }

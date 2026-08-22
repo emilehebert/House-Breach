@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.InputSystem;
 using UnityEngine.SceneManagement;
@@ -32,8 +31,6 @@ public class GameManager : MonoBehaviour
     CinemachineBasicMultiChannelPerlin _noise;
     float _savedAmplitudeGain;
 
-    private readonly List<CinemachineInputProvider> pausedInputProviders = new List<CinemachineInputProvider>();
-
     public static GameState CurrentState => Instance != null ? Instance.currentState : GameState.TitleMenu;
     public static bool IsPaused => Instance != null && Instance.currentState == GameState.Paused;
     public static bool IsMenuOpen => Instance != null && Instance.currentState != GameState.Playing;
@@ -64,8 +61,10 @@ public class GameManager : MonoBehaviour
     void InitializeForCurrentScene()
     {
         CleanupDuplicateEventSystems();
+        CleanupDuplicateAudioListeners();
         FocusStack.Clear();
 
+        CameraLookGate.Clear();
         isTitleScene = SceneManager.GetActiveScene().name == ScenesManager.Scene.MainMenu.ToString();
         EnterState(isTitleScene ? GameState.TitleMenu : GameState.Playing);
     }
@@ -122,29 +121,10 @@ public class GameManager : MonoBehaviour
     void SetCameraPaused(bool paused)
     {
         // Cuts look-around regardless of which vcam is active (gameplay,
-        // chair, etc.) — only cutting "MainVCam" would leave look-around
-        // possible in pause whenever another vcam (like a chair) is active.
-        if (paused)
-        {
-            pausedInputProviders.Clear();
-            foreach (var provider in FindObjectsOfType<CinemachineInputProvider>())
-            {
-                if (provider.enabled)
-                {
-                    provider.enabled = false;
-                    pausedInputProviders.Add(provider);
-                }
-            }
-        }
-        else
-        {
-            foreach (var provider in pausedInputProviders)
-            {
-                if (provider != null)
-                    provider.enabled = true;
-            }
-            pausedInputProviders.Clear();
-        }
+        // chair, etc.) via the shared CameraLookGate — only cutting
+        // "MainVCam" would leave look-around possible in pause whenever
+        // another vcam (like a chair) is active.
+        CameraLookGate.SetLocked(paused);
 
         // Camera shake stays specific to the gameplay vcam — resolved via
         // Camera.main (whichever body is currently possessed has the active
@@ -188,6 +168,28 @@ public class GameManager : MonoBehaviour
         {
             if (es != keep)
                 Destroy(es.gameObject);
+        }
+    }
+
+    // Same situation as CleanupDuplicateEventSystems, one level up: MainMenu
+    // carries its own standalone Camera/AudioListener/CinemachineBrain so the
+    // title screen has something to render with on a cold boot (before any
+    // MainCameraController has ever existed). Once the real
+    // MainCameraController survives back into MainMenu from Office/House01,
+    // that scene-local camera becomes a duplicate — same fix, same preference
+    // for whichever one is already persistent.
+    void CleanupDuplicateAudioListeners()
+    {
+        AudioListener[] allListeners = FindObjectsOfType<AudioListener>(true);
+        if (allListeners.Length <= 1) return;
+
+        AudioListener keep = System.Array.Find(allListeners, al => al.gameObject.scene.name == "DontDestroyOnLoad")
+            ?? allListeners[0];
+
+        foreach (var al in allListeners)
+        {
+            if (al != keep)
+                Destroy(al.gameObject);
         }
     }
 

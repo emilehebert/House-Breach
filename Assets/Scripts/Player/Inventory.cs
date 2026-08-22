@@ -68,6 +68,8 @@ public class Inventory : MonoBehaviour
 
     void HandleInput()
     {
+        if (PlayerDriver.Instance != null && !PlayerDriver.Instance.InputEnabled) return;
+
         // Tests
         if (Input.GetKeyDown(KeyCode.I)) RemoveItem(currentSlot);
 

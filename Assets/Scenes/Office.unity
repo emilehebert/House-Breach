@@ -2657,7 +2657,6 @@ GameObject:
   m_Component:
   - component: {fileID: 194691981}
   - component: {fileID: 194691982}
-  - component: {fileID: 194691983}
   m_Layer: 6
   m_Name: Virtual Camera
   m_TagString: Untagged
@@ -2720,22 +2719,6 @@ MonoBehaviour:
         m_Calls: []
   m_LegacyBlendHint: 0
   m_ComponentOwner: {fileID: 740051410}
---- !u!114 &194691983
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 194691980}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fb7194dc27b9df64c8beca7482ee8e0d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  PlayerIndex: -1
-  AutoEnableInputs: 1
-  XYAxis: {fileID: -3175944993834281107, guid: abd46dcbeee1a914d88780e3aadad5e4, type: 3}
-  ZAxis: {fileID: 0}
 --- !u!4 &198183192 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7356057435903039048, guid: 783a6050a4679304f93537706b4bb0d6, type: 3}
@@ -6716,7 +6699,6 @@ GameObject:
   m_Component:
   - component: {fileID: 497178287}
   - component: {fileID: 497178290}
-  - component: {fileID: 497178289}
   m_Layer: 6
   m_Name: Virtual Camera Chair
   m_TagString: Untagged
@@ -6740,22 +6722,6 @@ Transform:
   m_Father: {fileID: 1873420004}
   m_RootOrder: -1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &497178289
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 497178286}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fb7194dc27b9df64c8beca7482ee8e0d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  PlayerIndex: -1
-  AutoEnableInputs: 1
-  XYAxis: {fileID: -5630151704836100654, guid: ca9f5fa95ffab41fb9a615ab714db018, type: 3}
-  ZAxis: {fileID: 0}
 --- !u!114 &497178290
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -11610,7 +11576,7 @@ MonoBehaviour:
   focusPriority: 20
   defaultPriority: 0
   showCursor: 1
-  interactionSystem: {fileID: 0}
+  interactionSystem: {fileID: 4919457359778209973}
   onFocusEnter:
     m_PersistentCalls:
       m_Calls:
@@ -15263,6 +15229,50 @@ MeshCollider:
   m_Convex: 0
   m_CookingOptions: 30
   m_Mesh: {fileID: -4937278773500160974, guid: fbe06b3eddac4e9469e7a224e7351fd0, type: 3}
+--- !u!1 &1045943457
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1045943459}
+  - component: {fileID: 1045943458}
+  m_Layer: 0
+  m_Name: DebugMenu
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1045943458
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1045943457}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: cc108ac028d6c4b46b03137d23809aa5, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+--- !u!4 &1045943459
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1045943457}
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: -36.70005, y: 3.3452408, z: -5.0966873}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_RootOrder: 14
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &1047904420
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -20215,7 +20225,7 @@ MonoBehaviour:
   focusPriority: 20
   defaultPriority: 0
   showCursor: 1
-  interactionSystem: {fileID: 0}
+  interactionSystem: {fileID: 4919457359778209973}
   onFocusEnter:
     m_PersistentCalls:
       m_Calls:
@@ -21032,7 +21042,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1392042270}
   - component: {fileID: 1392042272}
-  - component: {fileID: 1392042271}
   m_Layer: 0
   m_Name: Virtual Camera
   m_TagString: Untagged
@@ -21056,22 +21065,6 @@ Transform:
   m_Father: {fileID: 6474154394447010521}
   m_RootOrder: -1
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1392042271
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1392042269}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fb7194dc27b9df64c8beca7482ee8e0d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  PlayerIndex: -1
-  AutoEnableInputs: 1
-  XYAxis: {fileID: -3175944993834281107, guid: abd46dcbeee1a914d88780e3aadad5e4, type: 3}
-  ZAxis: {fileID: 0}
 --- !u!114 &1392042272
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -21531,7 +21524,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1427937647}
   - component: {fileID: 1427937648}
-  - component: {fileID: 1427937649}
   m_Layer: 0
   m_Name: Virtual Camera
   m_TagString: Untagged
@@ -21594,22 +21586,6 @@ MonoBehaviour:
         m_Calls: []
   m_LegacyBlendHint: 0
   m_ComponentOwner: {fileID: 1043100347}
---- !u!114 &1427937649
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1427937646}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fb7194dc27b9df64c8beca7482ee8e0d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  PlayerIndex: -1
-  AutoEnableInputs: 1
-  XYAxis: {fileID: -3175944993834281107, guid: abd46dcbeee1a914d88780e3aadad5e4, type: 3}
-  ZAxis: {fileID: 0}
 --- !u!1 &1428764514
 GameObject:
   m_ObjectHideFlags: 3
@@ -27466,11 +27442,11 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 8187072330827331681, guid: a9d956d9d31c0e24eb2cb509d5fce06c, type: 3}
       propertyPath: m_DefaultBlend.m_Time
-      value: 0.2
+      value: 0
       objectReference: {fileID: 0}
     - target: {fileID: 8187072330827331681, guid: a9d956d9d31c0e24eb2cb509d5fce06c, type: 3}
       propertyPath: m_DefaultBlend.m_Style
-      value: 6
+      value: 0
       objectReference: {fileID: 0}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
@@ -29260,7 +29236,7 @@ MonoBehaviour:
   focusPriority: 20
   defaultPriority: 0
   showCursor: 1
-  interactionSystem: {fileID: 0}
+  interactionSystem: {fileID: 4919457359778209973}
   onFocusEnter:
     m_PersistentCalls:
       m_Calls:
@@ -29353,6 +29329,7 @@ MonoBehaviour:
   - {fileID: 11400000, guid: de2f2bc62778d0248b975704f1b87d4a, type: 2}
   - {fileID: 11400000, guid: f56fa9073ee94fa4a95662db69edd2e7, type: 2}
   - {fileID: 11400000, guid: c8ae0be8e4026d64bb42557010baaac2, type: 2}
+  - {fileID: 11400000, guid: 4b1393fe067f3a54a9d54439ccd9c0ee, type: 2}
 --- !u!1001 &2009177395
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -30905,7 +30882,6 @@ GameObject:
   m_Component:
   - component: {fileID: 2140853639}
   - component: {fileID: 2140853641}
-  - component: {fileID: 2140853640}
   m_Layer: 0
   m_Name: Virtual Camera
   m_TagString: Untagged
@@ -30929,22 +30905,6 @@ Transform:
   m_Father: {fileID: 5203348638987624999}
   m_RootOrder: -1
   m_LocalEulerAnglesHint: {x: 5.7, y: 180, z: 0}
---- !u!114 &2140853640
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 2140853638}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: fb7194dc27b9df64c8beca7482ee8e0d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  PlayerIndex: -1
-  AutoEnableInputs: 1
-  XYAxis: {fileID: -3175944993834281107, guid: abd46dcbeee1a914d88780e3aadad5e4, type: 3}
-  ZAxis: {fileID: 0}
 --- !u!114 &2140853641
 MonoBehaviour:
   m_ObjectHideFlags: 0

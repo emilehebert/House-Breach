@@ -54,6 +54,11 @@ public class FocusInteractable : MonoBehaviour, IInteractable, IFocusable
         if (PlayerDriver.Instance != null)
             PlayerDriver.Instance.SetInputEnabled(false);
 
+        // Cursor is unlocked for UI while focused (showCursor) — without this,
+        // moving the mouse to click a screen's UI would also spin the focus
+        // camera underneath it.
+        CameraLookGate.SetLocked(true);
+
         if (interactionSystem != null)
             interactionSystem.SetInteractionEnabled(false);
 
@@ -71,6 +76,8 @@ public class FocusInteractable : MonoBehaviour, IInteractable, IFocusable
 
         if (PlayerDriver.Instance != null)
             PlayerDriver.Instance.SetInputEnabled(true);
+
+        CameraLookGate.SetLocked(false);
 
         if (interactionSystem != null)
             interactionSystem.SetInteractionEnabled(true);

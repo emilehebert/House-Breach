@@ -23,9 +23,11 @@ public class WeaponSway : MonoBehaviour
     
     void Update()
     {
-        // Get mouse input
-        float mouseX = Input.GetAxis("Mouse X");
-        float mouseY = Input.GetAxis("Mouse Y");
+        // Get mouse input — reads the same raw axis camera look would use,
+        // so it needs to freeze under the same lock or the weapon keeps
+        // swaying while look (and everything else) is paused/focused.
+        float mouseX = CameraLookGate.IsLocked ? 0f : Input.GetAxis("Mouse X");
+        float mouseY = CameraLookGate.IsLocked ? 0f : Input.GetAxis("Mouse Y");
         
         // Calculate sway position
         Vector3 swayPosition = CalculateSwayPosition(mouseX, mouseY);

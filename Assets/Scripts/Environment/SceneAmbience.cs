@@ -7,6 +7,7 @@ public class SceneAmbience : MonoBehaviour
 
     private void Start()
     {
+        if (AudioManager.instance == null) return;
         AudioManager.instance.PlayAmbience(ambienceEvent, fadeInSeconds);
     }
 }
