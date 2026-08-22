@@ -24,12 +24,12 @@ public class Inventory : MonoBehaviour
 
     private AnimatorOverrideController playerOverride;
     private AnimationClip defaultHoldClip;
-    private PlayerBody body;
+    private PlayerController body;
 
     private void Awake()
     {
         InitVariables();
-        body = GetComponent<PlayerBody>();
+        body = GetComponent<PlayerController>();
 
         // 1. Get the original asset assigned in the Inspector
         RuntimeAnimatorController originalAsset = armsAnimator.runtimeAnimatorController;

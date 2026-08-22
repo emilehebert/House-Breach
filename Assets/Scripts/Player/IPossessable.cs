@@ -1,6 +1,6 @@
 using UnityEngine;
 
-// Shared contract for anything PlayerDriver can possess. PlayerBody
+// Shared contract for anything PlayerDriver can possess. PlayerController
 // (candidate — full moveset) and OfficeController (office worker — walk
 // only) both implement this so PlayerDriver can drive either one without
 // caring which. GameObject/IsGrounded/CurrentHorizontalSpeed are here

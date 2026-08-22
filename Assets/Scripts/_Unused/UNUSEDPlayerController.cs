@@ -2,9 +2,9 @@ using UnityEngine;
 using UnityEngine.InputSystem;
 
 [RequireComponent(typeof(CharacterController))]
-public class PlayerController : MonoBehaviour
+public class UNUSEDPlayerController : MonoBehaviour
 {
-    public static PlayerController Instance { get; private set; }
+    public static UNUSEDPlayerController Instance { get; private set; }
 
     [Header("Movement")]
     public float walkSpeed = 3f;

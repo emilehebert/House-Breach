@@ -10,7 +10,7 @@ using UnityEngine;
 // CharacterController) is never deactivated, which is what avoided all
 // the "Move called on inactive controller" issues from before.
 [RequireComponent(typeof(CharacterController))]
-public class PlayerBody : MonoBehaviour, IPossessable
+public class PlayerController : MonoBehaviour, IPossessable
 {
     [Header("Movement")]
     public float walkSpeed = 3f;

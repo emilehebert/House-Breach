@@ -1,7 +1,7 @@
 using UnityEngine;
 
 // Lightweight possessable body for the office worker: walk + gravity only,
-// no jump/crouch/slopes/inventory — deliberately asymmetric with PlayerBody,
+// no jump/crouch/slopes/inventory — deliberately asymmetric with PlayerController,
 // same shape as e.g. Call of Duty's RC-XD (a simpler body you can freely
 // swap into/out of, main body stays wherever it was left).
 [RequireComponent(typeof(CharacterController))]
@@ -29,7 +29,7 @@ public class OfficeController : MonoBehaviour, IPossessable
 
     void Awake() => controller = GetComponent<CharacterController>();
 
-    // Always ticks, possessed or not — same reasoning as PlayerBody.Update():
+    // Always ticks, possessed or not — same reasoning as PlayerController.Update():
     // nothing should glitch or pop when you switch back to this body later.
     void Update()
     {
@@ -52,7 +52,7 @@ public class OfficeController : MonoBehaviour, IPossessable
     public void Tick(Vector2 moveInput, bool jumpInput, bool runInput, bool crouchInput)
     {
         // Looked up fresh (not cached) so it always resolves to THIS body's
-        // own active camera, same pattern as PlayerBody.
+        // own active camera, same pattern as PlayerController.
         Camera cam = Camera.main;
         if (cam == null) return;
 

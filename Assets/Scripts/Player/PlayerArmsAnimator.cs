@@ -10,11 +10,11 @@ public class PlayerArmsAnimator : MonoBehaviour
     // toggled on/off on possession — so this always finds the right body
     // and never needs to check "is this body currently possessed" itself:
     // Update() simply doesn't run while that hierarchy is inactive.
-    private PlayerBody body;
+    private PlayerController body;
 
     private void Start()
     {
-        body = GetComponentInParent<PlayerBody>();
+        body = GetComponentInParent<PlayerController>();
 
         if (armsAnimator == null)
             armsAnimator = GetComponent<Animator>();

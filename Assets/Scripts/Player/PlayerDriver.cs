@@ -3,7 +3,7 @@ using UnityEngine.InputSystem;
 
 // The ONE thing that reads input in the whole game. Never turns off,
 // never destroyed, never duplicated — there's only one driver, period.
-// Switching characters means pointing it at a different PlayerBody, not
+// Switching characters means pointing it at a different PlayerController, not
 // creating/destroying/toggling controllers.
 public class PlayerDriver : MonoBehaviour
 {
@@ -18,7 +18,7 @@ public class PlayerDriver : MonoBehaviour
     public InputActionReference backAction;
 
     [Header("Starting Body")]
-    [Tooltip("Whoever should be controlled the moment this scene starts. Drag a component that implements IPossessable (PlayerBody or OfficeController) in here.")]
+    [Tooltip("Whoever should be controlled the moment this scene starts. Drag a component that implements IPossessable (PlayerController or OfficeController) in here.")]
     public MonoBehaviour startingBody;
 
     public IPossessable CurrentBody { get; private set; }

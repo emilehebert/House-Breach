@@ -14,9 +14,9 @@ using UnityEngine.Events;
 [RequireComponent(typeof(Collider))]
 public class PossessInteractable : MonoBehaviour, IInteractable, IFocusable
 {
-    [Tooltip("Must implement IPossessable (PlayerBody or OfficeController).")]
+    [Tooltip("Must implement IPossessable (PlayerController or OfficeController).")]
     [SerializeField] private MonoBehaviour bodyToPossess;
-    [Tooltip("Must implement IPossessable (PlayerBody or OfficeController).")]
+    [Tooltip("Must implement IPossessable (PlayerController or OfficeController).")]
     [SerializeField] private MonoBehaviour bodyToReturnTo;
     [SerializeField] private string interactText = "Take control";
 

@@ -9,7 +9,7 @@ public class CameraHolderAnimation : MonoBehaviour
 
     [Header("References")]
     public Transform cameraHolder; // The GameObject to rotate
-    public PlayerController playerMovement; // Reference to the PlayerMovement script
+    public UNUSEDPlayerController playerMovement; // Reference to the PlayerMovement script
     public FootstepSoundPlayer footstepAudio; // Reference to the FootstepAudio script
 
     private float animationTime = 0f; // Keeps track of curve time
