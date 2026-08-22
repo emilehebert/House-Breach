@@ -37,6 +37,15 @@ public class InteractionSystem : MonoBehaviour
 
     private IInteractable currentInteractable;
 
+    // Nested-lock counted the same way PlayerDriver.SetInputEnabled and
+    // CameraLookGate already do it — pause and an active focus (chair/screen)
+    // can both disable interactions at once without one release re-enabling
+    // it while the other still wants it blocked. Without this, unpausing
+    // while still focused would call SetInteractionEnabled(true) and clobber
+    // FocusInteractable's own disable, showing the cursor/prompt again even
+    // though a focus was still active.
+    private int interactionLockCount = 0;
+
     void OnEnable()
     {
         if (interactAction != null)
@@ -87,7 +96,11 @@ public class InteractionSystem : MonoBehaviour
     /// </summary>
     public void SetInteractionEnabled(bool value)
     {
-        enabled = value; // déclenche automatiquement OnEnable / OnDisable ci-dessus
+        interactionLockCount = value
+            ? Mathf.Max(0, interactionLockCount - 1)
+            : interactionLockCount + 1;
+
+        enabled = interactionLockCount <= 0; // déclenche automatiquement OnEnable / OnDisable ci-dessus
     }
 
     private bool CheckForInteractable()

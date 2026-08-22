@@ -31,6 +31,8 @@ public class GameManager : MonoBehaviour
     CinemachineBasicMultiChannelPerlin _noise;
     float _savedAmplitudeGain;
 
+    InteractionSystem _interactionSystem;
+
     public static GameState CurrentState => Instance != null ? Instance.currentState : GameState.TitleMenu;
     public static bool IsPaused => Instance != null && Instance.currentState == GameState.Paused;
     public static bool IsMenuOpen => Instance != null && Instance.currentState != GameState.Playing;
@@ -111,6 +113,7 @@ public class GameManager : MonoBehaviour
         SetTimeScale(paused ? 0f : 1f);
         FocusStack.RefreshCursor();
         SetCameraPaused(paused);
+        SetInteractionSystemPaused(paused);
     }
 
     void SetTimeScale(float value)
@@ -148,6 +151,23 @@ public class GameManager : MonoBehaviour
         {
             _noise.m_AmplitudeGain = _savedAmplitudeGain;
         }
+    }
+
+    // Freezes/hides the crosshair cursor and "E for X" prompt while paused —
+    // SetInteractionEnabled() also stops InteractionSystem.Update() entirely
+    // (not just the visuals), so raycasting/interacting can't sneak through
+    // while paused either. Same reusable hook FocusInteractable already uses
+    // for screen/chair focus. Looked up lazily instead of cached at scene
+    // load since InteractionSystem lives on its own object that
+    // CleanupDuplicateEventSystems-style timing issues could otherwise miss.
+    void SetInteractionSystemPaused(bool paused)
+    {
+        if (_interactionSystem == null)
+            _interactionSystem = FindObjectOfType<InteractionSystem>();
+
+        if (_interactionSystem == null) return;
+
+        _interactionSystem.SetInteractionEnabled(!paused);
     }
 
     void CleanupDuplicateEventSystems()

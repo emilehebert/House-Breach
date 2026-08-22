@@ -70,13 +70,6 @@ public class PlayerController : MonoBehaviour, IPossessable
     [Tooltip("Weight (lbs) treated as gravity-neutral — heavier candidates fall/land harder, lighter ones less so. Tune this against whatever candidates you've authored.")]
     public float neutralWeight = 130f;
 
-    [Header("Unsupervised Alarm")]
-    [Tooltip("How long this body can go unpossessed before the alarm fires.")]
-    public float unsupervisedAlarmDelay = 30f;
-    public UnityEngine.Events.UnityEvent onUnsupervisedAlarm;
-    private float unsupervisedTimer;
-    private bool alarmFired;
-
     // Single canonical "is this the body currently being controlled" check —
     // any per-body script (Inventory, arms animator, footsteps, future ones)
     // should read this instead of re-deriving the PlayerDriver comparison itself.
@@ -195,7 +188,6 @@ public class PlayerController : MonoBehaviour, IPossessable
         UpdateCameraPosition();
         ApplyGravity();
         UpdateSpeedTracking();
-        UpdateUnsupervisedAlarm();
 
         // Not currently possessed: let horizontal velocity settle to zero
         // instead of endlessly sliding in whatever direction it was last
@@ -618,25 +610,5 @@ public class PlayerController : MonoBehaviour, IPossessable
     void UpdateSpeedTracking()
     {
         currentHorizontalSpeed = new Vector3(playerVelocity.x, 0, playerVelocity.z).magnitude;
-    }
-
-    // Fires once per unsupervised stretch — resets the moment this body is
-    // possessed again, so leaving and coming back re-arms it rather than
-    // spamming the event every frame past the threshold.
-    void UpdateUnsupervisedAlarm()
-    {
-        if (IsPossessed)
-        {
-            unsupervisedTimer = 0f;
-            alarmFired = false;
-            return;
-        }
-
-        unsupervisedTimer += Time.deltaTime;
-        if (!alarmFired && unsupervisedTimer >= unsupervisedAlarmDelay)
-        {
-            alarmFired = true;
-            onUnsupervisedAlarm?.Invoke();
-        }
     }
 }
