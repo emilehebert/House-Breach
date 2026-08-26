@@ -32,6 +32,13 @@
         "com.unity.render-pipelines.core": "7.3.1"
       }
     },
+    "com.prenominal.realtimecsg": {
+      "version": "https://github.com/LogicalError/realtime-CSG-for-unity.git",
+      "depth": 0,
+      "source": "git",
+      "dependencies": {},
+      "hash": "8ea1d81e917c538d8f4563327c2c657b50a355f0"
+    },
     "com.unity.2d.sprite": {
       "version": "1.0.0",
       "depth": 0,
