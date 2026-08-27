@@ -5,6 +5,7 @@ using UnityEngine.Experimental.Rendering;
 using System.Collections.Generic;
 using UnityEditor;
 using System.ComponentModel;
+using UnityEngine.Rendering.RendererUtils;
 
 namespace HauntedPSX.RenderPipelines.PSX.Runtime
 {
@@ -38,8 +39,23 @@ namespace HauntedPSX.RenderPipelines.PSX.Runtime
 
         internal protected void Build()
         {
+            InitializeVolumeManager();
             ConfigureGlobalRenderPipelineTag();
             ConfigureSRPBatcherFromAsset(m_Asset);
+        }
+
+        static void InitializeVolumeManager()
+        {
+#if UNITY_2023_2_OR_NEWER
+            if (!VolumeManager.instance.isInitialized) { VolumeManager.instance.Initialize(); }
+#endif
+        }
+
+        static void DeinitializeVolumeManager()
+        {
+#if UNITY_2023_2_OR_NEWER
+            if (VolumeManager.instance.isInitialized) { VolumeManager.instance.Deinitialize(); }
+#endif
         }
 
         static void ConfigureGlobalRenderPipelineTag()
@@ -86,6 +102,7 @@ namespace HauntedPSX.RenderPipelines.PSX.Runtime
             CoreUtils.Destroy(crtMaterial);
             compressionCSKernels = null;
             DisposeLighting();
+            DeinitializeVolumeManager();
         }
 
         void PushCameraParameters(Camera camera, PSXCamera psxCamera, CommandBuffer cmd, out int rasterizationWidth, out int rasterizationHeight, out Vector4 cameraAspectModeUVScaleBias, bool isPSXQualityEnabled)
@@ -221,16 +238,28 @@ namespace HauntedPSX.RenderPipelines.PSX.Runtime
             }
         }
 
+#if UNITY_6000_0_OR_NEWER
+        protected override void Render(ScriptableRenderContext context, List<Camera> cameras)
+#else
         protected override void Render(ScriptableRenderContext context, Camera[] cameras)
+#endif
         {
             if (TryUpdateFrameCount(cameras))
             {
                 PSXCamera.CleanUnused();
             }
 
+#if UNITY_6000_0_OR_NEWER
+            if (cameras.Count == 0) { return; }
+#else
             if (cameras.Length == 0) { return; }
+#endif
 
+#if UNITY_6000_0_OR_NEWER
+            UnityEngine.Rendering.RenderPipeline.BeginContextRendering(context, cameras);
+#else
             UnityEngine.Rendering.RenderPipeline.BeginFrameRendering(context, cameras);
+#endif
 
             foreach (var camera in cameras)
             {
@@ -299,7 +328,7 @@ namespace HauntedPSX.RenderPipelines.PSX.Runtime
                     PushTerrainGrassParameters(camera, cmd, m_Asset, rasterizationWidth, rasterizationHeight);
                     PSXRenderPipeline.DrawFullScreenQuad(cmd, skyMaterial);
                     context.ExecuteCommandBuffer(cmd);
-                    cmd.Release();
+                    CommandBufferPool.Release(cmd);
 
                     DrawBackgroundOpaque(context, camera, ref cullingResults);
                     DrawBackgroundTransparent(context, camera, ref cullingResults);
@@ -307,8 +336,8 @@ namespace HauntedPSX.RenderPipelines.PSX.Runtime
                     cmd = CommandBufferPool.Get(PSXStringConstants.s_CommandBufferRenderPreMainStr);
                     PushPreMainParameters(camera, cmd);
                     context.ExecuteCommandBuffer(cmd);
-                    cmd.Release();
-                    
+                    CommandBufferPool.Release(cmd);
+
                     DrawMainOpaque(context, camera, ref cullingResults);
                     DrawMainTransparent(context, camera, ref cullingResults);
 
@@ -316,7 +345,7 @@ namespace HauntedPSX.RenderPipelines.PSX.Runtime
                     TryDrawAccumulationMotionBlurPreUIOverlay(psxCamera, cmd, accumulationMotionBlurMaterial, copyColorRespectFlipYMaterial);
                     PushPreUIOverlayParameters(camera, cmd);
                     context.ExecuteCommandBuffer(cmd);
-                    cmd.Release();
+                    CommandBufferPool.Release(cmd);
 
                     DrawUIOverlayOpaque(context, camera, ref cullingResults);
                     DrawUIOverlayTransparent(context, camera, ref cullingResults);
@@ -344,7 +373,7 @@ namespace HauntedPSX.RenderPipelines.PSX.Runtime
                 }
                 
                 context.ExecuteCommandBuffer(cmd);
-                cmd.Release();
+                CommandBufferPool.Release(cmd);
                 context.Submit();
 
                 psxCamera.UpdateEndFrame();
@@ -356,7 +385,23 @@ namespace HauntedPSX.RenderPipelines.PSX.Runtime
             }
         }
 
-        private bool TryUpdateFrameCount(Camera[] cameras)
+#if UNITY_6000_0_OR_NEWER
+        // Some Unity 6.x installs still require the older Camera[] abstract override to be
+        // implemented directly, even though List<Camera> is the preferred overload above.
+        // This just forwards to the List<Camera> implementation so both are always satisfied.
+        protected override void Render(ScriptableRenderContext context, Camera[] cameras)
+        {
+            Render(context, new List<Camera>(cameras));
+        }
+#endif
+
+        private bool TryUpdateFrameCount(
+#if UNITY_6000_0_OR_NEWER
+            List<Camera>
+#else
+            Camera[]
+#endif
+            cameras)
         {
 #if UNITY_EDITOR
             int newCount = frameCount;
@@ -540,6 +585,41 @@ namespace HauntedPSX.RenderPipelines.PSX.Runtime
                 cmd.SetGlobalFloat(PSXShaderIDs._BakedLightingMultiplier, volumeSettings.bakedLightingMultiplier.value);
                 cmd.SetGlobalFloat(PSXShaderIDs._VertexColorLightingMultiplier, volumeSettings.vertexColorLightingMultiplier.value);
                 cmd.SetGlobalFloat(PSXShaderIDs._DynamicLightingMultiplier, volumeSettings.dynamicLightingMultiplier.value);
+                cmd.SetGlobalInt(PSXShaderIDs._LightingClampMode, (int)volumeSettings.lightingClampMode.value);
+
+                Vector4 lightingClampParameters = Vector4.zero;
+                switch (volumeSettings.lightingClampMode.value)
+                {
+                    case LightingVolume.LightingClampMode.None: break;
+                    case LightingVolume.LightingClampMode.Clamp: lightingClampParameters = new Vector4(volumeSettings.lightingClamp.value, 0.0f, 0.0f, 0.0f); break;
+                    case LightingVolume.LightingClampMode.SoftClamp:
+                    {
+                        lightingClampParameters.x = volumeSettings.lightingClamp.value;
+                        lightingClampParameters.y = volumeSettings.lightingClampSharpness.value * 8.0f;
+
+                        // CPU side precompute of the scale term necessary to rescale our normalized softmin space back out into our raw space.
+                        // float3 clampRatio = (limit > 1e-5) ? (limit / limit) : 0.0;
+                        // float3 clampOffsetNormalized = 1.0 - clampRatio;
+                        // float3 clampSoftminNormalized = 0.5 * (clampOffsetNormalized - sqrt(clampOffsetNormalized * clampOffsetNormalized + sharpnessExponent));
+                        // 
+                        // float3 clampSoftminNormalizedMax = 0.5 * (0.0 - sqrt(0.0 * 0.0 + sharpnessExponent));
+                        // float3 clampSoftminNormalizedMin = 0.5 * (1.0 - sqrt(1.0 * 1.0 + sharpnessExponent));
+                        //
+                        float clampSoftminNormalizedMax = 0.5f * (0.0f - Mathf.Sqrt(0.0f + lightingClampParameters.y));
+                        float clampSoftminNormalizedMin = 0.5f * (1.0f - Mathf.Sqrt(1.0f + lightingClampParameters.y));
+
+                        // (x - clampSoftminNormalizedMin) / (clampSoftminNormalizedMax - clampSoftminNormalizedMin)
+                        lightingClampParameters.z = 1.0f / (clampSoftminNormalizedMax - clampSoftminNormalizedMin);
+                        lightingClampParameters.w = -clampSoftminNormalizedMin / (clampSoftminNormalizedMax - clampSoftminNormalizedMin);
+                        break;
+                    }
+                    default:
+                    {
+                        Debug.Assert(false, "PushLightingParameters: Encountered unsupported LightingClampMode. Falling back to LightingClampMode.None");
+                        break;
+                    }
+                }
+                cmd.SetGlobalVector(PSXShaderIDs._LightingClampParameters, lightingClampParameters);
             }
         }
 
@@ -1585,11 +1665,11 @@ namespace HauntedPSX.RenderPipelines.PSX.Runtime
 
         static void DrawSceneViewUI(Camera camera)
         {
-        #if UNITY_EDITOR
+#if UNITY_EDITOR
             // Emit scene view UI
             if (camera.cameraType == CameraType.SceneView)
                 ScriptableRenderContext.EmitWorldGeometryForSceneView(camera);
-        #endif
+#endif
         }
 
         static void DrawBackgroundOpaque(ScriptableRenderContext context, Camera camera, ref CullingResults cullingResults)
@@ -1632,6 +1712,24 @@ namespace HauntedPSX.RenderPipelines.PSX.Runtime
                 ? SortingCriteria.CommonOpaque
                 : ((SortingCriteria.CommonOpaque & (~SortingCriteria.QuantizedFrontToBack)) | SortingCriteria.BackToFront);
 
+#if UNITY_6000_0_OR_NEWER
+            var rendererListDesc = new RendererListDesc(PSXShaderPassNames.s_PSXLit, cullingResults, camera)
+            {
+                layerMask = camera.cullingMask, // Respect the culling mask specified on the camera so that users can selectively omit specific layers from rendering to this camera.
+                sortingCriteria = criteria,
+                excludeObjectMotionVectors = false,
+                rendererConfiguration = ComputePerObjectDataFromLightingVolume(camera),
+                renderingLayerMask = UInt32.MaxValue, // Everything
+                renderQueueRange = range,
+            };
+
+            var rendererList = context.CreateRendererList(rendererListDesc);
+            var cmd = CommandBufferPool.Get(PSXStringConstants.s_CommandBufferRenderOpaqueStr);
+            cmd.name = "DrawOpaque";
+            cmd.DrawRendererList(rendererList);
+            context.ExecuteCommandBuffer(cmd);
+            CommandBufferPool.Release(cmd);
+#else
             // Draw opaque objects using PSX shader pass
             var sortingSettings = new SortingSettings(camera)
             {
@@ -1652,10 +1750,28 @@ namespace HauntedPSX.RenderPipelines.PSX.Runtime
             };
 
             context.DrawRenderers(cullingResults, ref drawingSettings, ref filteringSettings);
+#endif
         }
 
         static void DrawTransparent(ScriptableRenderContext context, Camera camera, RenderQueueRange range, ref CullingResults cullingResults)
         {
+#if UNITY_6000_0_OR_NEWER
+            var rendererListDesc = new RendererListDesc(PSXShaderPassNames.s_PSXLit, cullingResults, camera)
+            {
+                layerMask = camera.cullingMask, // Respect the culling mask specified on the camera so that users can selectively omit specific layers from rendering to this camera.
+                sortingCriteria = SortingCriteria.CommonTransparent,
+                excludeObjectMotionVectors = false,
+                rendererConfiguration = ComputePerObjectDataFromLightingVolume(camera),
+                renderingLayerMask = UInt32.MaxValue, // Everything
+                renderQueueRange = range
+            };
+            var rendererList = context.CreateRendererList(rendererListDesc);
+
+            var cmd = CommandBufferPool.Get(PSXStringConstants.s_CommandBufferRenderTransparentStr);
+            cmd.DrawRendererList(rendererList);
+            context.ExecuteCommandBuffer(cmd);
+            cmd.Release();
+#else
             // Draw transparent objects using PSX shader pass
             var sortingSettings = new SortingSettings(camera)
             {
@@ -1676,15 +1792,40 @@ namespace HauntedPSX.RenderPipelines.PSX.Runtime
             };
 
             context.DrawRenderers(cullingResults, ref drawingSettings, ref filteringSettings);
+#endif
         }
 
         static void DrawSkybox(ScriptableRenderContext context, Camera camera)
         {
+#if UNITY_6000_0_OR_NEWER
+            var rendererList = context.CreateSkyboxRendererList(camera);
+            var cmd = CommandBufferPool.Get(PSXStringConstants.s_CommandBufferRenderSkyboxStr);
+            cmd.DrawRendererList(rendererList);
+            context.ExecuteCommandBuffer(cmd);
+            CommandBufferPool.Release(cmd);
+#else
             context.DrawSkybox(camera);
+#endif
         }
 
         static void DrawLegacyCanvasUI(ScriptableRenderContext context, Camera camera, ref CullingResults cullingResults)
         {
+#if UNITY_6000_0_OR_NEWER
+            var rendererListDesc = new RendererListDesc(PSXShaderPassNames.s_SRPDefaultUnlit, cullingResults, camera)
+            {
+                layerMask = camera.cullingMask, // Respect the culling mask specified on the camera so that users can selectively omit specific layers from rendering to this camera.
+                sortingCriteria = SortingCriteria.CommonTransparent,
+                excludeObjectMotionVectors = false,
+                renderingLayerMask = UInt32.MaxValue, // Everything
+                renderQueueRange = RenderQueueRange.all
+            };
+
+            var rendererList = context.CreateRendererList(rendererListDesc);
+            var cmd = CommandBufferPool.Get(PSXStringConstants.s_CommandBufferRenderLegacyCanvasUIStr);
+            cmd.DrawRendererList(rendererList);
+            context.ExecuteCommandBuffer(cmd);
+            CommandBufferPool.Release(cmd);
+#else
             // Draw legacy Canvas UI meshes.
             var sortingSettings = new SortingSettings(camera)
             {
@@ -1699,6 +1840,7 @@ namespace HauntedPSX.RenderPipelines.PSX.Runtime
                 excludeMotionVectorObjects = false
             };
             context.DrawRenderers(cullingResults, ref drawSettings, ref filterSettings);
+#endif
         }
 
         // Respects RTHandle scaling.
@@ -1785,23 +1927,25 @@ namespace HauntedPSX.RenderPipelines.PSX.Runtime
 
         static void DrawGizmos(ScriptableRenderContext context, Camera camera, GizmoSubset gizmoSubset)
         {
-        #if UNITY_EDITOR
+#if UNITY_EDITOR
             if (UnityEditor.Handles.ShouldRenderGizmos())
                 context.DrawGizmos(camera, gizmoSubset);
-        #endif
+#endif
         }
 
         public static bool IsComputeShaderSupportedPlatform()
         {
             if(!SystemInfo.supportsComputeShaders) { return false; }
 
-        #if UNITY_EDITOR
+#if UNITY_EDITOR
             UnityEditor.BuildTarget buildTarget = UnityEditor.EditorUserBuildSettings.activeBuildTarget;
 
             if (buildTarget == UnityEditor.BuildTarget.StandaloneWindows ||
                 buildTarget == UnityEditor.BuildTarget.StandaloneWindows64 ||
                 buildTarget == UnityEditor.BuildTarget.StandaloneLinux64 ||
+#if !UNITY_2023_1_OR_NEWER
                 buildTarget == UnityEditor.BuildTarget.Stadia ||
+#endif
                 buildTarget == UnityEditor.BuildTarget.StandaloneOSX ||
                 buildTarget == UnityEditor.BuildTarget.WSAPlayer ||
                 buildTarget == UnityEditor.BuildTarget.XboxOne ||
@@ -1815,14 +1959,17 @@ namespace HauntedPSX.RenderPipelines.PSX.Runtime
             {
                 return false;
             }
-        #else
+#else
             if (Application.platform == RuntimePlatform.WindowsPlayer ||
                 Application.platform == RuntimePlatform.OSXPlayer ||
                 Application.platform == RuntimePlatform.LinuxPlayer ||
                 Application.platform == RuntimePlatform.PS4 ||
                 Application.platform == RuntimePlatform.XboxOne ||
-                Application.platform == RuntimePlatform.Switch ||
-                Application.platform == RuntimePlatform.Stadia)
+                Application.platform == RuntimePlatform.Switch
+#if !UNITY_2023_1_OR_NEWER
+                || Application.platform == RuntimePlatform.Stadia
+#endif
+            )
             {
                 return true;
             }
@@ -1830,7 +1977,7 @@ namespace HauntedPSX.RenderPipelines.PSX.Runtime
             {
                 return false;
             }
-        #endif
+#endif
         }
 
         public static RenderTextureFormat GetFrameBufferRenderTextureFormatHDR(out bool hdrIsSupported)

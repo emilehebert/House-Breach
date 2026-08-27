@@ -210,9 +210,6 @@ namespace HauntedPSX.RenderPipelines.PSX.Runtime
         public static readonly int _AdditionalLightsSpotDir = Shader.PropertyToID("_AdditionalLightsSpotDir");
         public static readonly int _AdditionalLightOcclusionProbeChannel = Shader.PropertyToID("_AdditionalLightOcclusionProbeChannel");
         public static readonly int _AdditionalLightsCount = Shader.PropertyToID("_AdditionalLightsCount");
-        public static readonly int _AdditionalLightsCookieRight = Shader.PropertyToID("_AdditionalLightsCookieRight");
-        public static readonly int _AdditionalLightsCookieUp = Shader.PropertyToID("_AdditionalLightsCookieUp");
-        public static readonly int _AdditionalLightsCookieTex = Shader.PropertyToID("_AdditionalLightsCookieTex");
         public static readonly int _CompressionAccuracyThresholdAndInverse = Shader.PropertyToID("_CompressionAccuracyThresholdAndInverse");
         public static readonly int _CompressionSource = Shader.PropertyToID("_CompressionSource");
         public static readonly int _CompressionSourceIndicesMinMax = Shader.PropertyToID("_CompressionSourceIndicesMinMax");

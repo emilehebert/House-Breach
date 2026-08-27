@@ -1,4 +1,29 @@
 ---------------------------------------------------------------------------------------------------------------------------
+Bugfix PSXLit: **Flipbooks with non-square and / or non-power of two frame counts in X and Y now fully supported**
+---------------------------------------------------------------------------------------------------------------------------
+Previously, when a flipbook that contained non-square and / or non-power of two frame counts in X and Y was used, the LOD and uv offsets were incorrectly computed.
+When using LODs, individual frames of a flipbook must still be a power of two in order to correctly mipmap the flipbooks. For example, a flipbook with 3 x 1 frames and of resolution 256 x 64 is not valid because 256 / 3 = 85.33 which is not an integer and not a power of two.
+A resolution of 192 x 64 is valid because 192 / 3 = 64 which is an integer, and a power of two.
+
+---------------------------------------------------------------------------------------------------------------------------
+New Unity Version Support: **6.0, 6.1, 6.2**
+---------------------------------------------------------------------------------------------------------------------------
+Unity 6.2 is now the newest version that the Haunted PSX Render Pipeline now supports. Previously it only supported up to 2022.3.
+
+---------------------------------------------------------------------------------------------------------------------------
+new Lighting Volume Feature: **Lighting Clamp Mode**
+---------------------------------------------------------------------------------------------------------------------------
+Controls whether a light brightness limit is imposed.
+**None**: No limit imposed. Most physically correct. Artifacts can occur with bright light sources, and lower color precision or texture compression.
+**Clamp**: Introduces an artist-defined hard clamp value. Useful for limiting artifacts, or stylized rendering.
+**Soft Clamp**: Same as Clamp, but uses a soft-min curve to apply the clamp. Results in a smoother transition from unclamped to clamped brightness values.
+
+---------------------------------------------------------------------------------------------------------------------------
+New Unity Version Support: **2022.3**
+---------------------------------------------------------------------------------------------------------------------------
+Unity 2022.3 is now the newest version that the Haunted PSX Render Pipeline now supports. Previously it only supported up to 2022.2.
+
+---------------------------------------------------------------------------------------------------------------------------
 New Unity Version Support: **2022.2**
 ---------------------------------------------------------------------------------------------------------------------------
 Unity 2022.2 is now the newest version that the Haunted PSX Render Pipeline now supports. Previously it only supported up to 2021-LTS.

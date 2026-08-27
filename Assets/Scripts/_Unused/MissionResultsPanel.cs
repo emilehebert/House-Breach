@@ -58,7 +58,7 @@ public class MissionResultsPanel : MonoBehaviour, IFocusable
         if (GamePhaseTracker.Current != GamePhase.Office || !MissionData.HasPendingResult)
             return;
 
-        if (FindObjectOfType<MissionResultsPanel>() != null)
+        if (FindFirstObjectByType<MissionResultsPanel>() != null)
             return;
 
         new GameObject("MissionResultsPanel").AddComponent<MissionResultsPanel>();

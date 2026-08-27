@@ -13,7 +13,7 @@ public class PickableItem : MonoBehaviour, IInteractable
     public void Interact()
     {
         // 1) find the player’s inventory
-        var inv = FindObjectOfType<Inventory>();
+        var inv = FindFirstObjectByType<Inventory>();
 
         // 2) add the SO reference to the array
         if (inv.IsFull) return;

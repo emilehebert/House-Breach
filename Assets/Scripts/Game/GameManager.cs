@@ -163,7 +163,7 @@ public class GameManager : MonoBehaviour
     void SetInteractionSystemPaused(bool paused)
     {
         if (_interactionSystem == null)
-            _interactionSystem = FindObjectOfType<InteractionSystem>();
+            _interactionSystem = FindFirstObjectByType<InteractionSystem>();
 
         if (_interactionSystem == null) return;
 
@@ -172,7 +172,7 @@ public class GameManager : MonoBehaviour
 
     void CleanupDuplicateEventSystems()
     {
-        EventSystem[] allSystems = FindObjectsOfType<EventSystem>(true);
+        EventSystem[] allSystems = FindObjectsByType<EventSystem>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         if (allSystems.Length <= 1) return;
 
         // Prefer keeping one that's already persistent (living in the
@@ -200,7 +200,7 @@ public class GameManager : MonoBehaviour
     // for whichever one is already persistent.
     void CleanupDuplicateAudioListeners()
     {
-        AudioListener[] allListeners = FindObjectsOfType<AudioListener>(true);
+        AudioListener[] allListeners = FindObjectsByType<AudioListener>(FindObjectsInactive.Include, FindObjectsSortMode.None);
         if (allListeners.Length <= 1) return;
 
         AudioListener keep = System.Array.Find(allListeners, al => al.gameObject.scene.name == "DontDestroyOnLoad")

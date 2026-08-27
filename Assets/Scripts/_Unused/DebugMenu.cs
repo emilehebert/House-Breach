@@ -61,7 +61,7 @@ public class DebugMenu : MonoBehaviour
 
             scrollPos = GUILayout.BeginScrollView(scrollPos, GUILayout.Height(300));
 
-            foreach (GameObject obj in FindObjectsOfType<GameObject>())
+            foreach (GameObject obj in FindObjectsByType<GameObject>(FindObjectsSortMode.None))
             {
                 if (GUILayout.Button(obj.name))
                 {

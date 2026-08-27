@@ -27,7 +27,7 @@ public class DebugHUD : MonoBehaviour
     [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.AfterSceneLoad)]
     static void Bootstrap()
     {
-        if (FindObjectOfType<DebugHUD>() != null)
+        if (FindFirstObjectByType<DebugHUD>() != null)
             return;
 
         GameObject go = new GameObject("DebugHUD");
@@ -54,7 +54,7 @@ public class DebugHUD : MonoBehaviour
 
         text = RuntimeUI.CreateText(canvas.transform, "DebugText", 15, FontStyles.Normal);
         text.alignment = TextAlignmentOptions.TopLeft;
-        text.enableWordWrapping = false;
+        text.textWrappingMode = TextWrappingModes.NoWrap;
 
         RectTransform rect = text.GetComponent<RectTransform>();
         rect.anchorMin = new Vector2(0, 1);

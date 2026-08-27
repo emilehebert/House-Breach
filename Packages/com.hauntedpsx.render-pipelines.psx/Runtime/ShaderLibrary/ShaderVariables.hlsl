@@ -198,19 +198,9 @@ half4 _AdditionalLightsColor[MAX_VISIBLE_LIGHTS];
 half4 _AdditionalLightsAttenuation[MAX_VISIBLE_LIGHTS];
 half4 _AdditionalLightsSpotDir[MAX_VISIBLE_LIGHTS];
 half4 _AdditionalLightOcclusionProbeChannel[MAX_VISIBLE_LIGHTS];
-// Cookie projection basis vectors (light right / light up, world space, pre-scaled by 1/tan(spotAngle*0.5)).
-// .w of _AdditionalLightsCookieRight is used as a 0/1 "this light has a cookie" flag.
-half4 _AdditionalLightsCookieRight[MAX_VISIBLE_LIGHTS];
-half4 _AdditionalLightsCookieUp[MAX_VISIBLE_LIGHTS];
 #ifndef SHADER_API_GLES3
 CBUFFER_END
 #endif
-
-// Shared cookie texture sampled by all additional lights that have cookies enabled.
-// NOTE: this is a single shared texture (not a per-light atlas) - if more than one
-// visible light has a different cookie assigned, only the last one processed in
-// PushDynamicLightingParameters will "win" for this frame.
-TEXTURE2D(_AdditionalLightsCookieTex);
 
 float4x4 OptimizeProjectionMatrix(float4x4 M)
 {
